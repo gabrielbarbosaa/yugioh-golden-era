@@ -238,9 +238,13 @@ function Editor({
             {draft.name}
           </ThemedText>
           {owner ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              por @{owner}
-            </ThemedText>
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => router.push({ pathname: '/user/[username]', params: { username: owner } })}>
+              <ThemedText type="small" themeColor="textSecondary">
+                por @{owner}
+              </ThemedText>
+            </Pressable>
           ) : null}
           {draft.description ? <ThemedText>{draft.description}</ThemedText> : null}
         </ThemedView>

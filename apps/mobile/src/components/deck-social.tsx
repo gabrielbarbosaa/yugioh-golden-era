@@ -1,4 +1,5 @@
 import type { Schemas } from '@golden-era/api-client';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput } from 'react-native';
 
@@ -103,7 +104,11 @@ export function DeckSocial({
       <ThemedText type="smallBold">Comentários</ThemedText>
       {comments.items.map((c) => (
         <ThemedView key={c.id} type="backgroundElement" style={styles.comment}>
-          <ThemedText type="smallBold">@{c.author.username}</ThemedText>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => router.push({ pathname: '/user/[username]', params: { username: c.author.username } })}>
+            <ThemedText type="smallBold">@{c.author.username}</ThemedText>
+          </Pressable>
           <ThemedText type="small">{c.body}</ThemedText>
         </ThemedView>
       ))}
