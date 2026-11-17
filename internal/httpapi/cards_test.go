@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/golden-era/api/internal/api/gen"
+	"github.com/golden-era/api/internal/deck"
 	"github.com/golden-era/api/internal/store"
 )
 
@@ -45,6 +47,28 @@ func (f *fakeCards) Get(_ context.Context, id int64) (store.Card, error) {
 		}
 	}
 	return store.Card{}, store.ErrNotFound
+}
+
+// Infos conhece as cartas 1 (monstro), 2 (magia), 3 (armadilha), 5 (fusão, Extra Deck)
+// e as sintéticas 100–199 (monstros normais), úteis para montar decks de 40+ cartas.
+func (f *fakeCards) Infos(_ context.Context, ids []int64) (map[int64]deck.CardInfo, error) {
+	lvl := 4
+	out := map[int64]deck.CardInfo{}
+	for _, id := range ids {
+		switch {
+		case id == 1:
+			out[id] = deck.CardInfo{Name: "Monstro", Type: "Normal Monster", Level: &lvl}
+		case id == 2:
+			out[id] = deck.CardInfo{Name: "Magia", Type: "Spell Card"}
+		case id == 3:
+			out[id] = deck.CardInfo{Name: "Armadilha", Type: "Trap Card"}
+		case id == 5:
+			out[id] = deck.CardInfo{Name: "Fusão", Type: "Fusion Monster", Level: &lvl, IsExtraDeck: true}
+		case id >= 100 && id < 200:
+			out[id] = deck.CardInfo{Name: "Sintética " + strconv.FormatInt(id, 10), Type: "Normal Monster", Level: &lvl}
+		}
+	}
+	return out, nil
 }
 
 func (f *fakeCards) Archetypes(context.Context) ([]string, error) { return nil, nil }

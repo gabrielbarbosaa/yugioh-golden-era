@@ -56,6 +56,15 @@ var publicOps = map[string]bool{
 	"RefreshToken":   true,
 }
 
+// optionalAuthOps aceitam visitantes anônimos, mas, se vier um token, ele precisa ser válido
+// (o usuário identificado vê, por exemplo, os próprios decks privados e likedByMe).
+var optionalAuthOps = map[string]bool{
+	"GetDeck":       true,
+	"ExportDeck":    true,
+	"ListDecks":     true,
+	"ListUserDecks": true,
+}
+
 type unauthorizedError struct{ msg string }
 
 func (e unauthorizedError) Error() string { return e.msg }
@@ -65,8 +74,13 @@ func (a *apiServer) authenticate(next gen.StrictHandlerFunc, operationID string)
 	if publicOps[operationID] {
 		return next
 	}
+	optional := optionalAuthOps[operationID]
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, req any) (any, error) {
-		raw, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+		header := r.Header.Get("Authorization")
+		if optional && header == "" {
+			return next(ctx, w, r, req)
+		}
+		raw, ok := strings.CutPrefix(header, "Bearer ")
 		if !ok || raw == "" {
 			return nil, unauthorizedError{"token de acesso ausente"}
 		}

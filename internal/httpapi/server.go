@@ -21,6 +21,7 @@ import (
 type Deps struct {
 	Cards        CardStore
 	Users        UserStore
+	Decks        DeckStore
 	Tokens       *auth.Tokens
 	ImagesDir    string    // pasta servida em /images/ (vazio desliga a rota)
 	ImageBaseURL string    // prefixo das URLs de imagem devolvidas nas cartas
@@ -35,6 +36,7 @@ type apiServer struct {
 	version      string
 	cards        CardStore
 	users        UserStore
+	decks        DeckStore
 	tokens       *auth.Tokens
 	imageBaseURL string
 	eraEnd       time.Time
@@ -53,6 +55,16 @@ var implemented = map[string]bool{
 	"Logout":         true,
 	"GetMe":          true,
 	"UpdateMe":       true,
+	"ListDecks":      true,
+	"CreateDeck":     true,
+	"ImportDeck":     true,
+	"GetDeck":        true,
+	"UpdateDeck":     true,
+	"DeleteDeck":     true,
+	"CopyDeck":       true,
+	"ExportDeck":     true,
+	"ListMyDecks":    true,
+	"ListUserDecks":  true,
 }
 
 func (a *apiServer) GetHealth(context.Context, gen.GetHealthRequestObject) (gen.GetHealthResponseObject, error) {
@@ -77,6 +89,7 @@ func NewHandler(log *slog.Logger, version string, deps Deps) http.Handler {
 		version:      version,
 		cards:        deps.Cards,
 		users:        deps.Users,
+		decks:        deps.Decks,
 		tokens:       deps.Tokens,
 		imageBaseURL: deps.ImageBaseURL,
 		eraEnd:       deps.EraEnd,
@@ -124,7 +137,8 @@ func NewHandler(log *slog.Logger, version string, deps Deps) http.Handler {
 		writeProblem(w, http.StatusNotFound, "rota não encontrada")
 	})
 
-	return chain(mux, requestID, recoverer(log), accessLog(log))
+	// 1 MiB cobre o maior deck possível (JSON ou YDK) com folga.
+	return chain(http.MaxBytesHandler(mux, 1<<20), requestID, recoverer(log), accessLog(log))
 }
 
 // imageHandler serve arquivos de imagem sem listar diretórios.

@@ -59,6 +59,7 @@ func run() error {
 		Handler: httpapi.NewHandler(log, cfg.Version, httpapi.Deps{
 			Cards:        store.NewCards(pool),
 			Users:        store.NewUsers(pool),
+			Decks:        store.NewDecks(pool),
 			Tokens:       auth.NewTokens(cfg.JWTSecret, cfg.AccessTTL, cfg.RefreshTTL),
 			ImagesDir:    cfg.ImagesDir,
 			ImageBaseURL: cfg.ImageBaseURL,

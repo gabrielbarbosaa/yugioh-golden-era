@@ -11,6 +11,7 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/golden-era/api/internal/api/gen"
+	"github.com/golden-era/api/internal/deck"
 	"github.com/golden-era/api/internal/store"
 )
 
@@ -23,6 +24,7 @@ const (
 type CardStore interface {
 	List(ctx context.Context, f store.CardFilter, after *store.CardCursor, limit int) ([]store.Card, bool, error)
 	Get(ctx context.Context, id int64) (store.Card, error)
+	Infos(ctx context.Context, ids []int64) (map[int64]deck.CardInfo, error)
 	Archetypes(ctx context.Context) ([]string, error)
 	Sets(ctx context.Context, until time.Time) ([]store.CardSet, error)
 }

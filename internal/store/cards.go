@@ -10,6 +10,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/golden-era/api/internal/deck"
 )
 
 // ErrNotFound indica que o registro pedido não existe.
@@ -145,6 +147,30 @@ func (s *Cards) Get(ctx context.Context, id int64) (Card, error) {
 		return Card{}, ErrNotFound
 	}
 	return c, err
+}
+
+// Infos devolve os dados das cartas pedidas que existem no catálogo (as ausentes ficam de fora).
+func (s *Cards) Infos(ctx context.Context, ids []int64) (map[int64]deck.CardInfo, error) {
+	out := make(map[int64]deck.CardInfo, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := s.pool.Query(ctx, `SELECT id, name, type, level, is_extra_deck FROM cards WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var (
+			id int64
+			ci deck.CardInfo
+		)
+		if err := rows.Scan(&id, &ci.Name, &ci.Type, &ci.Level, &ci.IsExtraDeck); err != nil {
+			return nil, err
+		}
+		out[id] = ci
+	}
+	return out, rows.Err()
 }
 
 // Archetypes lista os arquétipos presentes no catálogo, em ordem alfabética.
