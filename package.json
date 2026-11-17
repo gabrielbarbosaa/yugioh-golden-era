@@ -1,0 +1,14 @@
+{
+  "name": "golden-era",
+  "private": true,
+  "description": "Workspace JS do Golden Era: cliente da API (compartilhado), app mobile (Expo) e, depois, o site (Next.js). A API em Go fica na raiz.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "api-client:generate": "npm run generate -w @golden-era/api-client",
+    "mobile": "npm run start -w @golden-era/mobile",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  }
+}

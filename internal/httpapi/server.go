@@ -28,6 +28,7 @@ type Deps struct {
 	ImagesDir    string    // pasta servida em /images/ (vazio desliga a rota)
 	ImageBaseURL string    // prefixo das URLs de imagem devolvidas nas cartas
 	EraEnd       time.Time // limite superior da era, usado ao listar sets
+	CORSOrigins  []string  // origens de navegador autorizadas ("*" libera todas)
 }
 
 // apiServer implementa as operações já prontas de gen.StrictServerInterface.
@@ -155,7 +156,8 @@ func NewHandler(log *slog.Logger, version string, deps Deps) http.Handler {
 	})
 
 	// 1 MiB cobre o maior deck possível (JSON ou YDK) com folga.
-	return chain(http.MaxBytesHandler(mux, 1<<20), requestID, recoverer(log), accessLog(log))
+	// cors fica por último (mais interno) para responder preflights antes do roteador.
+	return chain(http.MaxBytesHandler(mux, 1<<20), requestID, recoverer(log), accessLog(log), cors(deps.CORSOrigins))
 }
 
 // imageHandler serve arquivos de imagem sem listar diretórios.

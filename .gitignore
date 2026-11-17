@@ -12,3 +12,9 @@
 .env
 .env.*
 !.env.example
+
+# JavaScript (workspace: apps/mobile, packages/api-client e, depois, apps/web)
+node_modules/
+.expo/
+dist/
+expo-env.d.ts

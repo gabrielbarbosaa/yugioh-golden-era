@@ -33,6 +33,25 @@ go run ./cmd/ingest -images=false     # data only
 
 Ingest flags can also be set via env `ERA_REGION` (ocg|tcg), `ERA_START_DATE`, `ERA_END_DATE`. `-rps` is capped at 10 because the YGOPRODeck API blocks IPs above 20 req/s.
 
+## JavaScript workspace (mobile app now, Next.js site later)
+
+npm workspaces at the repo root (`package.json`): `packages/api-client`, `apps/mobile` (Expo SDK 58 + Expo Router) and a future `apps/web` (Next.js). The Go API stays at the root; nothing was moved.
+
+```bash
+npm install                              # once, at the repo root
+npm run mobile                           # Expo dev server (w = browser, a = Android, QR = Expo Go)
+npm run api-client:generate              # regenerate packages/api-client/src/schema.d.ts from api/openapi.yaml
+npm run typecheck                        # api-client + mobile
+npm test -w @golden-era/api-client       # node:test with a fake fetch (token refresh logic)
+cd apps/mobile && npx eslint src         # React Compiler lint rules are on: no setState in effects / ref writes in render
+```
+
+- `@golden-era/api-client` exports `createApiClient({ baseUrl, tokens, onSessionExpired })` (openapi-fetch). It attaches the Bearer token and, on a 401, trades the single-use refresh token for a new pair **once for all concurrent requests**, then retries. `schema.d.ts` is generated and committed — rerun the generator after editing `api/openapi.yaml`. The package is consumed as TypeScript source (no build step); Next.js will need `transpilePackages`.
+- The app reads `EXPO_PUBLIC_API_URL` (default `localhost`, `10.0.2.2` on the Android emulator). On a physical phone use the machine's LAN IP **and** start the API with `IMAGE_BASE_URL=http://<ip>:8080/images`, since card image URLs come from the API.
+- The API has CORS (`CORS_ORIGINS`, default Expo web + Next dev ports) because browsers call it directly; native apps don't need it.
+- Expo changes every SDK: follow `apps/mobile/AGENTS.md` (use `npx expo install`, check the versioned docs before touching Expo APIs).
+- Known contract gap: `DeckSummary` only has `coverCardId`, not an image URL, so deck lists can't show cover art yet.
+
 ## Architecture
 
 - **Spec-first**: `api/openapi.yaml` is the single source of truth for the HTTP contract. `api/spec.go` embeds it (served at `/openapi.yaml`, Swagger UI at `/docs`). `oapi-codegen.yaml` is configured to generate models + a strict `net/http` ServeMux server into `internal/api/gen/api.gen.go`, (generated, committed; the output path is passed via `-o` in the `go:generate` line in `api/spec.go`, not in the config). The strict server is wired into `httpapi` (mounted under `/v1`); `implemented` in `internal/httpapi/server.go` lists the operations that have handlers — **when adding a handler, add its Go-style operation name (e.g. `ListCards`) there**, otherwise a strict middleware answers 501. `apiServer` embeds a nil `StrictServerInterface` for the rest.

@@ -27,6 +27,8 @@ type Config struct {
 	RefreshTTL time.Duration
 
 	MigrateOnStart bool // aplica as migrations ao subir (MIGRATE_ON_START=true)
+
+	CORSOrigins []string // CORS_ORIGINS, separadas por vírgula; padrão: Expo web e Next.js em dev
 }
 
 // DevJWTSecret é o segredo padrão de desenvolvimento; nunca use em produção.
@@ -45,6 +47,7 @@ func Load(version string) (Config, error) {
 		EraEndDate:      getenv("ERA_END_DATE", "2003-12-31"),
 		JWTSecret:       getenv("JWT_SECRET", DevJWTSecret),
 	}
+	cfg.CORSOrigins = strings.Split(getenv("CORS_ORIGINS", "http://localhost:8081,http://localhost:19006,http://localhost:3000"), ",")
 	var err error
 	if cfg.MigrateOnStart, err = strconv.ParseBool(getenv("MIGRATE_ON_START", "false")); err != nil {
 		return Config{}, fmt.Errorf("MIGRATE_ON_START inválido: %w", err)

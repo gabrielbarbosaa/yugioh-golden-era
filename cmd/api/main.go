@@ -74,6 +74,7 @@ func run() error {
 			ImagesDir:    cfg.ImagesDir,
 			ImageBaseURL: cfg.ImageBaseURL,
 			EraEnd:       eraEnd,
+			CORSOrigins:  cfg.CORSOrigins,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
