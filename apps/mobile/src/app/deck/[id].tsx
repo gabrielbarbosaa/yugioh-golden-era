@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD_ASPECT } from '@/components/card-tile';
 import { CardPicker } from '@/components/card-picker';
+import { DeckSocial } from '@/components/deck-social';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -98,7 +99,22 @@ function StepButton({ label, a11y, onPress }: { label: string; a11y: string; onP
   );
 }
 
-function Editor({ deckId: initialId, initial, readOnly, owner }: { deckId?: string; initial: Draft; readOnly: boolean; owner?: string }) {
+type Social = { likeCount: number; likedByMe: boolean };
+
+function Editor({
+  deckId: initialId,
+  initial,
+  readOnly,
+  owner,
+  social,
+}: {
+  deckId?: string;
+  initial: Draft;
+  readOnly: boolean;
+  owner?: string;
+  /** Presente só para decks já publicados: habilita curtidas e comentários. */
+  social?: Social;
+}) {
   const theme = useTheme();
   const [deckId, setDeckId] = useState(initialId);
   const [draft, setDraft] = useState(initial);
@@ -266,6 +282,10 @@ function Editor({ deckId: initialId, initial, readOnly, owner }: { deckId?: stri
         </ThemedView>
       ))}
 
+      {social && deckId ? (
+        <DeckSocial deckId={deckId} likeCount={social.likeCount} likedByMe={social.likedByMe} />
+      ) : null}
+
       {readOnly ? null : (
         <ThemedView style={styles.section}>
           {message ? (
@@ -355,6 +375,11 @@ export default function DeckScreen() {
       <Editor
         deckId={state.deck.id}
         initial={toDraft(state.deck)}
+        social={
+          state.deck.visibility === 'public'
+            ? { likeCount: state.deck.likeCount, likedByMe: state.deck.likedByMe ?? false }
+            : undefined
+        }
         readOnly={!state.mine}
         owner={state.deck.owner.username}
       />
