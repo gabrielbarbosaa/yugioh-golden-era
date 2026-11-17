@@ -58,7 +58,7 @@ func TestSpecIsServed(t *testing.T) {
 		t.Fatalf("status = %d, esperado 200", res.StatusCode)
 	}
 	if !strings.Contains(string(b), "openapi: 3.0.3") {
-		t.Error("spec OpenAPI nÃ£o encontrada na resposta")
+		t.Error("spec OpenAPI nÃƒÂ£o encontrada na resposta")
 	}
 }
 
@@ -76,7 +76,7 @@ func TestDocsPage(t *testing.T) {
 		t.Fatalf("status = %d, esperado 200", res.StatusCode)
 	}
 	if !strings.Contains(string(b), "SwaggerUIBundle") {
-		t.Error("pÃ¡gina do Swagger UI nÃ£o encontrada")
+		t.Error("pÃƒÂ¡gina do Swagger UI nÃƒÂ£o encontrada")
 	}
 }
 
@@ -146,7 +146,7 @@ func TestImagesAreServedWithoutDirectoryListing(t *testing.T) {
 func TestUnimplementedOperationReturns501(t *testing.T) {
 	srv := newTestServer(t)
 
-	res, err := http.Get(srv.URL + "/v1/users/yugi")
+	res, err := http.Get(srv.URL + "/v1/me/collection")
 	if err != nil {
 		t.Fatal(err)
 	}

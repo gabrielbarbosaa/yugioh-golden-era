@@ -23,6 +23,7 @@ type UserStore interface {
 	Create(ctx context.Context, email, username, passwordHash string) (store.User, error)
 	ByEmail(ctx context.Context, email string) (store.User, error)
 	Profile(ctx context.Context, id string) (store.Profile, error)
+	PublicProfile(ctx context.Context, username, viewerID string) (store.Profile, error)
 	UpdateProfile(ctx context.Context, id string, up store.ProfileUpdate) error
 	SaveRefreshToken(ctx context.Context, userID string, hash []byte, expiresAt time.Time) error
 	ConsumeRefreshToken(ctx context.Context, hash []byte) (string, error)
@@ -54,6 +55,8 @@ var publicOps = map[string]bool{
 	"Register":       true,
 	"Login":          true,
 	"RefreshToken":   true,
+
+	"ListDeckComments": true,
 }
 
 // optionalAuthOps aceitam visitantes anônimos, mas, se vier um token, ele precisa ser válido
@@ -63,6 +66,7 @@ var optionalAuthOps = map[string]bool{
 	"ExportDeck":    true,
 	"ListDecks":     true,
 	"ListUserDecks": true,
+	"GetUser":       true,
 }
 
 type unauthorizedError struct{ msg string }

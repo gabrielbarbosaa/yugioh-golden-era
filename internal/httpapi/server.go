@@ -22,6 +22,7 @@ type Deps struct {
 	Cards        CardStore
 	Users        UserStore
 	Decks        DeckStore
+	Social       SocialStore
 	Tokens       *auth.Tokens
 	ImagesDir    string    // pasta servida em /images/ (vazio desliga a rota)
 	ImageBaseURL string    // prefixo das URLs de imagem devolvidas nas cartas
@@ -37,6 +38,7 @@ type apiServer struct {
 	cards        CardStore
 	users        UserStore
 	decks        DeckStore
+	social       SocialStore
 	tokens       *auth.Tokens
 	imageBaseURL string
 	eraEnd       time.Time
@@ -65,6 +67,14 @@ var implemented = map[string]bool{
 	"ExportDeck":     true,
 	"ListMyDecks":    true,
 	"ListUserDecks":  true,
+
+	"LikeDeck":          true,
+	"UnlikeDeck":        true,
+	"ListDeckComments":  true,
+	"CreateDeckComment": true,
+	"FollowUser":        true,
+	"UnfollowUser":      true,
+	"GetUser":           true,
 }
 
 func (a *apiServer) GetHealth(context.Context, gen.GetHealthRequestObject) (gen.GetHealthResponseObject, error) {
@@ -90,6 +100,7 @@ func NewHandler(log *slog.Logger, version string, deps Deps) http.Handler {
 		cards:        deps.Cards,
 		users:        deps.Users,
 		decks:        deps.Decks,
+		social:       deps.Social,
 		tokens:       deps.Tokens,
 		imageBaseURL: deps.ImageBaseURL,
 		eraEnd:       deps.EraEnd,

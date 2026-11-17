@@ -131,10 +131,12 @@ func newDeckServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	users, cards := newFakeUsers(), &fakeCards{}
+	decks := &fakeDecks{decks: map[string]*store.Deck{}, users: users, cards: cards}
 	srv := httptest.NewServer(NewHandler(log, "test", Deps{
 		Cards:  cards,
 		Users:  users,
-		Decks:  &fakeDecks{decks: map[string]*store.Deck{}, users: users, cards: cards},
+		Decks:  decks,
+		Social: &fakeSocial{decks: decks, users: users, likes: map[[2]string]bool{}},
 		Tokens: auth.NewTokens("test-secret-test-secret-test-secret-12", time.Minute, time.Hour),
 	}))
 	t.Cleanup(srv.Close)

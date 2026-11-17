@@ -25,6 +25,7 @@ type fakeUsers struct {
 	users   map[string]store.User // por id
 	tokens  map[string]string     // hash do refresh token -> user id (vazio = revogado)
 	profile store.ProfileUpdate
+	follows [][2]string // {seguidor, seguido}
 }
 
 func newFakeUsers() *fakeUsers {
@@ -63,6 +64,26 @@ func (f *fakeUsers) Profile(_ context.Context, id string) (store.Profile, error)
 		return store.Profile{}, store.ErrNotFound
 	}
 	return store.Profile{User: u}, nil
+}
+
+func (f *fakeUsers) PublicProfile(_ context.Context, username, viewerID string) (store.Profile, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, u := range f.users {
+		if u.Username == username {
+			p := store.Profile{User: u}
+			for _, fo := range f.follows {
+				if fo[1] == u.ID {
+					p.FollowerCount++
+					if fo[0] == viewerID {
+						p.FollowedByMe = true
+					}
+				}
+			}
+			return p, nil
+		}
+	}
+	return store.Profile{}, store.ErrNotFound
 }
 
 func (f *fakeUsers) UpdateProfile(_ context.Context, id string, up store.ProfileUpdate) error {

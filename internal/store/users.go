@@ -30,6 +30,7 @@ type Profile struct {
 	DeckCount      int
 	FollowerCount  int
 	FollowingCount int
+	FollowedByMe   bool
 }
 
 // ProfileUpdate traz os campos alteráveis; nil mantém o valor atual.
@@ -85,6 +86,29 @@ func (s *Users) Profile(ctx context.Context, id string) (Profile, error) {
 	var p Profile
 	err := s.pool.QueryRow(ctx, profileSQL, id).Scan(&p.ID, &p.Email, &p.Username, &p.PasswordHash,
 		&p.Bio, &p.AvatarURL, &p.CreatedAt, &p.DeckCount, &p.FollowerCount, &p.FollowingCount)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Profile{}, ErrNotFound
+	}
+	return p, err
+}
+
+// PublicProfile devolve o perfil público de um usuário: só decks públicos entram na contagem e
+// FollowedByMe reflete o visitante (vazio = anônimo).
+func (s *Users) PublicProfile(ctx context.Context, username, viewerID string) (Profile, error) {
+	var p Profile
+	var viewer any
+	if viewerID != "" {
+		viewer = viewerID
+	}
+	err := s.pool.QueryRow(ctx, `
+		SELECT u.id::text, u.email::text, u.username::text, u.password_hash, u.bio, u.avatar_url, u.created_at,
+		       (SELECT count(*) FROM decks d WHERE d.owner_id = u.id AND d.visibility = 'public'),
+		       (SELECT count(*) FROM follows f WHERE f.followee_id = u.id),
+		       (SELECT count(*) FROM follows f WHERE f.follower_id = u.id),
+		       COALESCE(EXISTS (SELECT 1 FROM follows f WHERE f.followee_id = u.id AND f.follower_id = $2::uuid), false)
+		FROM users u WHERE u.username = $1`, username, viewer).
+		Scan(&p.ID, &p.Email, &p.Username, &p.PasswordHash, &p.Bio, &p.AvatarURL, &p.CreatedAt,
+			&p.DeckCount, &p.FollowerCount, &p.FollowingCount, &p.FollowedByMe)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Profile{}, ErrNotFound
 	}
