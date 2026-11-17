@@ -82,11 +82,16 @@ function MyDecks() {
     <ThemedView style={styles.decks}>
       <ThemedView style={styles.decksHeader}>
         <ThemedText type="smallBold">Meus decks</ThemedText>
-        <Pressable
-          onPress={() => router.push({ pathname: '/deck/[id]', params: { id: 'new' } })}
-          accessibilityRole="button">
-          <ThemedText type="linkPrimary">+ Novo deck</ThemedText>
-        </Pressable>
+        <ThemedView style={styles.decksActions}>
+          <Pressable onPress={() => router.push('/import')} accessibilityRole="button">
+            <ThemedText type="linkPrimary">Importar .ydk</ThemedText>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push({ pathname: '/deck/[id]', params: { id: 'new' } })}
+            accessibilityRole="button">
+            <ThemedText type="linkPrimary">+ Novo deck</ThemedText>
+          </Pressable>
+        </ThemedView>
       </ThemedView>
       {items.map((deck) => (
         <DeckRow key={deck.id} deck={deck} showVisibility />
@@ -150,6 +155,7 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', gap: Spacing.two },
   stat: { flex: 1, alignItems: 'center', borderRadius: Spacing.three, padding: Spacing.three, gap: Spacing.half },
   decks: { gap: Spacing.two },
+  decksActions: { flexDirection: 'row', gap: Spacing.three },
   decksHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   pressed: { opacity: 0.7 },
 });

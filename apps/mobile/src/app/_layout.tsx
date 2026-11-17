@@ -29,6 +29,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="card/[id]" options={{ title: 'Carta', presentation: 'modal' }} />
             <Stack.Screen name="deck/[id]" options={{ title: 'Deck' }} />
+            <Stack.Screen name="import" options={{ title: 'Importar deck' }} />
           </Stack>
         </CollectionGate>
       </SessionProvider>

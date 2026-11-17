@@ -9,6 +9,7 @@ import { CARD_ASPECT } from '@/components/card-tile';
 import { CardPicker } from '@/components/card-picker';
 import { DeckSocial } from '@/components/deck-social';
 import { StateMessage } from '@/components/state-message';
+import { YdkExport } from '@/components/ydk-export';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -309,6 +310,8 @@ function Editor({
           )}
         </ThemedView>
       ))}
+
+      {deckId ? <YdkExport deckId={deckId} /> : null}
 
       {social && deckId ? (
         <DeckSocial deckId={deckId} likeCount={social.likeCount} likedByMe={social.likedByMe} />
