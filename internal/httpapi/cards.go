@@ -25,6 +25,7 @@ type CardStore interface {
 	List(ctx context.Context, f store.CardFilter, after *store.CardCursor, limit int) ([]store.Card, bool, error)
 	Get(ctx context.Context, id int64) (store.Card, error)
 	Infos(ctx context.Context, ids []int64) (map[int64]deck.CardInfo, error)
+	Facets(ctx context.Context) (store.CardFacets, error)
 	Archetypes(ctx context.Context) ([]string, error)
 	Sets(ctx context.Context, until time.Time) ([]store.CardSet, error)
 }
@@ -110,6 +111,27 @@ func (a *apiServer) ListArchetypes(ctx context.Context, _ gen.ListArchetypesRequ
 		list = []string{}
 	}
 	return gen.ListArchetypes200JSONResponse(list), nil
+}
+
+// GetCardFacets devolve os valores disponíveis para os filtros de busca de cartas.
+func (a *apiServer) GetCardFacets(ctx context.Context, _ gen.GetCardFacetsRequestObject) (gen.GetCardFacetsResponseObject, error) {
+	f, err := a.cards.Facets(ctx)
+	if err != nil {
+		return nil, err
+	}
+	nonNil := func(s []string) []string { // o JSON precisa de [] e não de null
+		if s == nil {
+			return []string{}
+		}
+		return s
+	}
+	levels := f.Levels
+	if levels == nil {
+		levels = []int{}
+	}
+	return gen.GetCardFacets200JSONResponse(gen.CardFacets{
+		Types: nonNil(f.Types), Attributes: nonNil(f.Attributes), Races: nonNil(f.Races), Levels: levels,
+	}), nil
 }
 
 // GetBanlist devolve a lista de cartas proibidas/limitadas aplicada às regras de deck.

@@ -334,3 +334,28 @@ h2 {
   padding: 0.2rem 0;
   break-inside: avoid;
 }
+
+.search.filters {
+  flex-wrap: wrap;
+}
+
+.search.filters input[type="search"] {
+  min-width: 12rem;
+}
+
+.filter-row {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.filter-row select {
+  flex: 1 1 9rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius);
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+}

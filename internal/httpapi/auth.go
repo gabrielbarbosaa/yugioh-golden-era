@@ -53,6 +53,7 @@ var publicOps = map[string]bool{
 	"ListArchetypes": true,
 	"ListSets":       true,
 	"GetBanlist":     true,
+	"GetCardFacets":  true,
 	"Register":       true,
 	"Login":          true,
 	"RefreshToken":   true,

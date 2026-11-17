@@ -78,6 +78,10 @@ func (f *fakeCards) Infos(_ context.Context, ids []int64) (map[int64]deck.CardIn
 
 func (f *fakeCards) Archetypes(context.Context) ([]string, error) { return nil, nil }
 
+func (f *fakeCards) Facets(context.Context) (store.CardFacets, error) {
+	return store.CardFacets{Types: []string{"Normal Monster", "Spell Card"}, Attributes: []string{"DARK"}, Levels: []int{4, 7}}, nil
+}
+
 func (f *fakeCards) Sets(context.Context, time.Time) ([]store.CardSet, error) {
 	return []store.CardSet{{Code: "LOB", Name: "Legend of Blue Eyes", NumOfCards: 126}}, nil
 }
@@ -174,4 +178,23 @@ func TestListArchetypesAndSetsReturnArrays(t *testing.T) {
 	if len(sets) != 1 || sets[0].Code != "LOB" {
 		t.Errorf("sets inesperados: %+v", sets)
 	}
+}
+
+func TestGetCardFacets(t *testing.T) {
+	srv := newTestServer(t)
+	var f struct {
+		Types      []string `json:"types"`
+		Attributes []string `json:"attributes"`
+		Races      []string `json:"races"`
+		Levels     []int    `json:"levels"`
+	}
+	getJSON(t, srv.URL+"/v1/cards/facets", http.StatusOK, &f)
+	if len(f.Types) != 2 || f.Types[0] != "Normal Monster" || len(f.Attributes) != 1 || len(f.Levels) != 2 {
+		t.Fatalf("facets inesperadas: %+v", f)
+	}
+	if f.Races == nil {
+		t.Error("races deveria ser [] e nao null")
+	}
+	// /cards/facets nao pode ser confundido com /cards/{cardId}.
+	getJSON(t, srv.URL+"/v1/cards/1", http.StatusOK, nil)
 }

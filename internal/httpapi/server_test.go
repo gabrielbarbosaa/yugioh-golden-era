@@ -166,7 +166,7 @@ func TestNotImplementedMiddleware(t *testing.T) {
 // Toda operaÃ§Ã£o do contrato precisa constar em implemented (senÃ£o responderia 501 sem querer).
 func TestAllContractOperationsAreImplemented(t *testing.T) {
 	for _, op := range []string{
-		"GetHealth", "Register", "Login", "RefreshToken", "Logout", "ListCards", "GetCard", "ListArchetypes", "ListSets", "GetBanlist",
+		"GetHealth", "Register", "Login", "RefreshToken", "Logout", "ListCards", "GetCard", "ListArchetypes", "ListSets", "GetBanlist", "GetCardFacets",
 		"ListDecks", "CreateDeck", "ImportDeck", "GetDeck", "UpdateDeck", "DeleteDeck", "CopyDeck", "ExportDeck",
 		"LikeDeck", "UnlikeDeck", "ListDeckComments", "CreateDeckComment", "GetMe", "UpdateMe", "ListMyDecks",
 		"GetMyCollection", "ReplaceMyCollection", "GetUser", "ListUserDecks", "FollowUser", "UnfollowUser",

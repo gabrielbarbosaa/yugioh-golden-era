@@ -144,6 +144,42 @@ func (s *Cards) List(ctx context.Context, f CardFilter, after *CardCursor, limit
 	return out, more, nil
 }
 
+// CardFacets são os valores distintos que o catálogo tem para cada filtro, em ordem.
+type CardFacets struct {
+	Types      []string
+	Attributes []string
+	Races      []string
+	Levels     []int
+}
+
+// Facets lista os valores disponíveis para filtrar cartas.
+func (s *Cards) Facets(ctx context.Context) (CardFacets, error) {
+	distinct := func(column string) ([]string, error) {
+		rows, err := s.pool.Query(ctx, "SELECT DISTINCT "+column+" FROM cards WHERE "+column+" IS NOT NULL AND "+column+" <> '' ORDER BY 1")
+		if err != nil {
+			return nil, err
+		}
+		return pgx.CollectRows(rows, pgx.RowTo[string])
+	}
+	var f CardFacets
+	var err error
+	if f.Types, err = distinct("type"); err != nil {
+		return f, err
+	}
+	if f.Attributes, err = distinct("attribute"); err != nil {
+		return f, err
+	}
+	if f.Races, err = distinct("race"); err != nil {
+		return f, err
+	}
+	rows, err := s.pool.Query(ctx, `SELECT DISTINCT level FROM cards WHERE level IS NOT NULL ORDER BY 1`)
+	if err != nil {
+		return f, err
+	}
+	f.Levels, err = pgx.CollectRows(rows, pgx.RowTo[int])
+	return f, err
+}
+
 // Get devolve uma carta pelo passcode.
 func (s *Cards) Get(ctx context.Context, id int64) (Card, error) {
 	c, err := scanCard(s.pool.QueryRow(ctx, "SELECT "+cardColumns+" FROM cards WHERE id = $1", id))

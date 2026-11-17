@@ -110,6 +110,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cards/facets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Valores disponíveis para filtrar o catálogo
+         * @description Tipos, atributos, espécies e níveis que existem nas cartas da era, para montar os filtros de
+         *     `GET /cards` (`type`, `attribute`, `race`, `level`). Os arquétipos ficam em `GET /archetypes`.
+         */
+        get: operations["getCardFacets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cards/{cardId}": {
         parameters: {
             query?: never;
@@ -526,6 +547,31 @@ export interface components {
              */
             maxCopies: number;
         };
+        CardFacets: {
+            /**
+             * @example [
+             *       "Effect Monster",
+             *       "Spell Card",
+             *       "Trap Card"
+             *     ]
+             */
+            types: string[];
+            /**
+             * @example [
+             *       "DARK",
+             *       "LIGHT"
+             *     ]
+             */
+            attributes: string[];
+            /**
+             * @example [
+             *       "Spellcaster",
+             *       "Warrior"
+             *     ]
+             */
+            races: string[];
+            levels: number[];
+        };
         BanlistEntry: {
             /** Format: int64 */
             cardId: number;
@@ -887,6 +933,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CardPage"];
+                };
+            };
+        };
+    };
+    getCardFacets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Valores de filtro */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardFacets"];
                 };
             };
         };
