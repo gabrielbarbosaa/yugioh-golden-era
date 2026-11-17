@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+
+import { UserMenu } from "@/components/user-menu";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,6 +22,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <nav aria-label="Principal">
               <Link href="/">Cartas</Link>
               <Link href="/decks">Decks</Link>
+              {/* Lê o cookie de sessão: fica num Suspense para o resto do topo continuar estático. */}
+              <Suspense fallback={<span className="usermenu" />}>
+                <UserMenu />
+              </Suspense>
             </nav>
           </div>
         </header>
