@@ -23,9 +23,32 @@ export const copiesOf = (cards: DeckCards, cardId: number) =>
 /** Zona natural da carta quando o jogador toca em "adicionar ao deck". */
 export const homeZone = (card: Card): Zone => (isExtraCard(card) ? 'extra' : 'main');
 
+/** Máximo de cópias da carta no deck: 3, ou menos se estiver na lista de proibidas/limitadas da era. */
+export const maxCopiesOf = (card: Card) => Math.min(MAX_COPIES, card.maxCopies);
+
+/** "Proibida", "Limitada" ou "Semilimitada"; `null` se a carta não tem restrição. */
+export function banlistLabel(card: Card): string | null {
+  switch (card.maxCopies) {
+    case 0:
+      return 'Proibida';
+    case 1:
+      return 'Limitada';
+    case 2:
+      return 'Semilimitada';
+    default:
+      return null;
+  }
+}
+
 /** `null` se pode adicionar; senão o motivo, em português. */
 export function canAdd(cards: DeckCards, zone: Zone, card: Card): string | null {
-  if (copiesOf(cards, card.id) >= MAX_COPIES) return `Máximo de ${MAX_COPIES} cópias por carta`;
+  const max = maxCopiesOf(card);
+  if (max === 0) return 'Carta proibida na lista da era';
+  if (copiesOf(cards, card.id) >= max) {
+    return max < MAX_COPIES
+      ? `${banlistLabel(card)} na lista da era: máximo de ${max} ${max === 1 ? 'cópia' : 'cópias'}`
+      : `Máximo de ${MAX_COPIES} cópias por carta`;
+  }
   if (zone === 'main' && isExtraCard(card)) return 'Cartas do Extra Deck não vão no deck principal';
   if (zone === 'extra' && !isExtraCard(card)) return 'Esta carta não é do Extra Deck';
   if (zoneCount(cards, zone) >= LIMITS[zone]) return `${ZONE_LABEL[zone]} já tem ${LIMITS[zone]} cartas`;

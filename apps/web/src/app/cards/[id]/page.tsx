@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { api, describeError } from "@/lib/api";
+import { banlistLabel } from "@/lib/banlist";
 
 type Params = Promise<{ id: string }>;
 
@@ -59,6 +60,7 @@ async function CardDetail({ params }: { params: Params }) {
             <Fact label="ATK" value={card.atk} />
             <Fact label="DEF" value={card.def} />
             <Fact label="Arquétipo" value={card.archetype} />
+            <Fact label="Lista da era" value={banlistLabel(card.maxCopies)} />
             <Fact label="Lançamento (OCG)" value={card.ocgDate} />
           </div>
           <p style={{ whiteSpace: "pre-line" }}>{card.desc}</p>

@@ -1,0 +1,67 @@
+# Lista de cartas proibidas/limitadas do OCG vigente ao fim da era Duel Monsters.
+# Fonte: Yugipedia, "October 2003 Lists" (OCG), em vigor a partir de 15/10/2003 (texto colado pelo dono do projeto).
+# Formato: <limite><TAB><nome exato da carta>. Limites: forbidden (0 cópias), limited (1), semi (2).
+# Cartas ilimitadas não aparecem. Para gerar o JSON embutido na API: go run ./cmd/banlist
+
+limited	Black Luster Soldier - Envoy of the Beginning
+limited	Breaker the Magical Warrior
+limited	Chaos Emperor Dragon - Envoy of the End
+limited	Cyber Jar
+limited	Dark Magician of Chaos
+limited	Exiled Force
+limited	Exodia the Forbidden One
+limited	Fiber Jar
+limited	Injection Fairy Lily
+limited	Jinzo
+limited	Left Arm of the Forbidden One
+limited	Left Leg of the Forbidden One
+limited	Magical Scientist
+limited	Reflect Bounder
+limited	Right Arm of the Forbidden One
+limited	Right Leg of the Forbidden One
+limited	Sangan
+limited	Sinister Serpent
+limited	Tribe-Infecting Virus
+limited	Twin-Headed Behemoth
+limited	Vampire Lord
+limited	Witch of the Black Forest
+limited	Yata-Garasu
+limited	Butterfly Dagger - Elma
+limited	Card Destruction
+limited	Change of Heart
+limited	Confiscation
+limited	Dark Hole
+limited	Delinquent Duo
+limited	Graceful Charity
+limited	Harpie's Feather Duster
+limited	Heavy Storm
+limited	Mage Power
+limited	Mirage of Nightmare
+limited	Monster Reborn
+limited	Painful Choice
+limited	Pot of Greed
+limited	Premature Burial
+limited	Raigeki
+limited	Snatch Steal
+limited	Swords of Revealing Light
+limited	The Forceful Sentry
+limited	United We Stand
+limited	Upstart Goblin
+limited	Call of the Haunted
+limited	Ceasefire
+limited	Exchange of the Spirit
+limited	Imperial Order
+limited	Magic Cylinder
+limited	Mirror Force
+limited	Reckless Greed
+limited	Ring of Destruction
+
+semi	Makyura the Destructor
+semi	Manticore of Darkness
+semi	Marauding Captain
+semi	Morphing Jar
+semi	Morphing Jar #2
+semi	Creature Swap
+semi	Nobleman of Crossout
+semi	Reinforcement of the Army
+semi	Last Turn

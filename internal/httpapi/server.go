@@ -15,6 +15,7 @@ import (
 	"github.com/golden-era/api/api"
 	"github.com/golden-era/api/internal/api/gen"
 	"github.com/golden-era/api/internal/auth"
+	"github.com/golden-era/api/internal/banlist"
 )
 
 // Deps reúne as dependências externas dos handlers.
@@ -25,10 +26,11 @@ type Deps struct {
 	Social       SocialStore
 	Collection   CollectionStore
 	Tokens       *auth.Tokens
-	ImagesDir    string    // pasta servida em /images/ (vazio desliga a rota)
-	ImageBaseURL string    // prefixo das URLs de imagem devolvidas nas cartas
-	EraEnd       time.Time // limite superior da era, usado ao listar sets
-	CORSOrigins  []string  // origens de navegador autorizadas ("*" libera todas)
+	ImagesDir    string        // pasta servida em /images/ (vazio desliga a rota)
+	ImageBaseURL string        // prefixo das URLs de imagem devolvidas nas cartas
+	EraEnd       time.Time     // limite superior da era, usado ao listar sets
+	CORSOrigins  []string      // origens de navegador autorizadas ("*" libera todas)
+	Banlist      *banlist.List // lista de proibidas/limitadas aplicada aos decks (nil usa a embutida)
 }
 
 // apiServer implementa as operações já prontas de gen.StrictServerInterface.
@@ -46,6 +48,7 @@ type apiServer struct {
 	imageBaseURL string
 	eraEnd       time.Time
 	logins       *loginLimiter
+	bans         *banlist.List
 }
 
 // implemented lista as operações (nome Go, como o gerador as passa ao middleware) que têm handler.
@@ -55,6 +58,7 @@ var implemented = map[string]bool{
 	"GetCard":        true,
 	"ListArchetypes": true,
 	"ListSets":       true,
+	"GetBanlist":     true,
 	"Register":       true,
 	"Login":          true,
 	"RefreshToken":   true,
@@ -113,6 +117,10 @@ func NewHandler(log *slog.Logger, version string, deps Deps) http.Handler {
 		imageBaseURL: deps.ImageBaseURL,
 		eraEnd:       deps.EraEnd,
 		logins:       newLoginLimiter(loginMaxFails, loginWindow),
+		bans:         deps.Banlist,
+	}
+	if srv.bans == nil {
+		srv.bans = banlist.Default()
 	}
 	// O último da lista é o mais externo: primeiro barra o que não existe (501), depois autentica.
 	mws := []gen.StrictMiddlewareFunc{srv.authenticate, notImplemented}

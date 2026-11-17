@@ -1,0 +1,313 @@
+{
+  "name": "OCG - outubro de 2003",
+  "format": "OCG",
+  "effectiveFrom": "2003-10-15",
+  "source": "Yugipedia, October 2003 Lists (OCG)",
+  "cards": [
+    {
+      "cardId": 72989439,
+      "name": "Black Luster Soldier - Envoy of the Beginning",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 71413901,
+      "name": "Breaker the Magical Warrior",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 69243953,
+      "name": "Butterfly Dagger - Elma",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 97077563,
+      "name": "Call of the Haunted",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 72892473,
+      "name": "Card Destruction",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 36468556,
+      "name": "Ceasefire",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 4031928,
+      "name": "Change of Heart",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 82301904,
+      "name": "Chaos Emperor Dragon - Envoy of the End",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 17375316,
+      "name": "Confiscation",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 34124316,
+      "name": "Cyber Jar",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 53129443,
+      "name": "Dark Hole",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 40737112,
+      "name": "Dark Magician of Chaos",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 44763025,
+      "name": "Delinquent Duo",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 17484499,
+      "name": "Exchange of the Spirit",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 74131780,
+      "name": "Exiled Force",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 33396948,
+      "name": "Exodia the Forbidden One",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 78706415,
+      "name": "Fiber Jar",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 79571449,
+      "name": "Graceful Charity",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 18144507,
+      "name": "Harpie's Feather Duster",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 19613556,
+      "name": "Heavy Storm",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 61740673,
+      "name": "Imperial Order",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 79575620,
+      "name": "Injection Fairy Lily",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 77585513,
+      "name": "Jinzo",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 7902349,
+      "name": "Left Arm of the Forbidden One",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 44519536,
+      "name": "Left Leg of the Forbidden One",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 83746708,
+      "name": "Mage Power",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 62279055,
+      "name": "Magic Cylinder",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 34206604,
+      "name": "Magical Scientist",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 41482598,
+      "name": "Mirage of Nightmare",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 44095762,
+      "name": "Mirror Force",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 83764719,
+      "name": "Monster Reborn",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 74191942,
+      "name": "Painful Choice",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 55144522,
+      "name": "Pot of Greed",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 70828912,
+      "name": "Premature Burial",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 12580477,
+      "name": "Raigeki",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 37576645,
+      "name": "Reckless Greed",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 2851070,
+      "name": "Reflect Bounder",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 70903634,
+      "name": "Right Arm of the Forbidden One",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 8124921,
+      "name": "Right Leg of the Forbidden One",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 83555666,
+      "name": "Ring of Destruction",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 26202165,
+      "name": "Sangan",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 8131171,
+      "name": "Sinister Serpent",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 45986603,
+      "name": "Snatch Steal",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 72302403,
+      "name": "Swords of Revealing Light",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 42829885,
+      "name": "The Forceful Sentry",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 33184167,
+      "name": "Tribe-Infecting Virus",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 43586926,
+      "name": "Twin-Headed Behemoth",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 56747793,
+      "name": "United We Stand",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 70368879,
+      "name": "Upstart Goblin",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 53839837,
+      "name": "Vampire Lord",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 78010363,
+      "name": "Witch of the Black Forest",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 3078576,
+      "name": "Yata-Garasu",
+      "maxCopies": 1
+    },
+    {
+      "cardId": 31036355,
+      "name": "Creature Swap",
+      "maxCopies": 2
+    },
+    {
+      "cardId": 28566710,
+      "name": "Last Turn",
+      "maxCopies": 2
+    },
+    {
+      "cardId": 21593977,
+      "name": "Makyura the Destructor",
+      "maxCopies": 2
+    },
+    {
+      "cardId": 77121851,
+      "name": "Manticore of Darkness",
+      "maxCopies": 2
+    },
+    {
+      "cardId": 2460565,
+      "name": "Marauding Captain",
+      "maxCopies": 2
+    },
+    {
+      "cardId": 33508719,
+      "name": "Morphing Jar",
+      "maxCopies": 2
+    },
+    {
+      "cardId": 79106360,
+      "name": "Morphing Jar #2",
+      "maxCopies": 2
+    },
+    {
+      "cardId": 71044499,
+      "name": "Nobleman of Crossout",
+      "maxCopies": 2
+    },
+    {
+      "cardId": 32807846,
+      "name": "Reinforcement of the Army",
+      "maxCopies": 2
+    }
+  ]
+}

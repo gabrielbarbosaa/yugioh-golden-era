@@ -102,6 +102,14 @@ func (a *apiServer) prepareDeck(ctx context.Context, in gen.DeckInput) (store.De
 	if err != nil {
 		return store.DeckInput{}, nil, err
 	}
+	// A lista de proibidas/limitadas da era vale para o deck inteiro, somando as três zonas.
+	for id, ci := range infos {
+		if a.bans.Restricted(id) {
+			limit := a.bans.MaxCopies(id)
+			ci.Limit = &limit
+			infos[id] = ci
+		}
+	}
 	if issues := deck.Validate(cards, infos, in.Visibility == "public"); len(issues) > 0 {
 		return store.DeckInput{}, issuesToFields(issues), nil
 	}

@@ -13,7 +13,7 @@ import { usePagedList } from '@/hooks/use-paged-list';
 import { useTheme } from '@/hooks/use-theme';
 import { api } from '@/lib/api';
 import { useCollection } from '@/lib/collection';
-import { canAdd, copiesOf, homeZone, type DeckCards, type Zone } from '@/lib/deck-rules';
+import { banlistLabel, canAdd, copiesOf, homeZone, type DeckCards, type Zone } from '@/lib/deck-rules';
 
 const THUMB = 48;
 
@@ -98,6 +98,7 @@ export function CardPicker({
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
                   {item.type}
+                  {banlistLabel(item) ? ` · ${banlistLabel(item)}` : ''}
                   {copies > 0 ? ` · ${copies}/3 no deck` : ''}
                   {owned ? ` · tenho ${owned[item.id] ?? 0}` : ''}
                 </ThemedText>

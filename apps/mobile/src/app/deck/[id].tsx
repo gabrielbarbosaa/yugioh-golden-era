@@ -20,6 +20,7 @@ import { useCollection } from '@/lib/collection';
 import {
   addCard,
   allCardIds,
+  banlistLabel,
   canAdd,
   copiesOf,
   emptyCards,
@@ -83,6 +84,7 @@ function CardRow({
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
           {card?.type ?? ''}
+          {card && banlistLabel(card) ? ` · ${banlistLabel(card)}` : ''}
           {owned !== undefined ? (
             <ThemedText type="small" style={short ? styles.error : undefined} themeColor={short ? undefined : 'textSecondary'}>
               {card ? ' · ' : ''}

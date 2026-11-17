@@ -138,3 +138,39 @@ func TestCover(t *testing.T) {
 		t.Errorf("deck vazio não tem capa: %v", got)
 	}
 }
+
+func TestValidateBanlistLimits(t *testing.T) {
+	cat := map[int64]CardInfo{
+		1: {Name: "Pot of Greed", Type: "Spell Card", Limit: intp(1)},
+		2: {Name: "Morphing Jar", Type: "Effect Monster", Limit: intp(2)},
+		3: {Name: "Metamorphosis", Type: "Spell Card", Limit: intp(0)},
+		4: {Name: "Dark Magician", Type: "Normal Monster"},
+	}
+	tests := []struct {
+		name  string
+		cards Cards
+		msg   string // vazio = deve passar
+	}{
+		{"limitada com 1 cópia", Cards{Main: []Entry{{1, 1}}}, ""},
+		{"limitada com 2 cópias", Cards{Main: []Entry{{1, 2}}}, "limitada"},
+		{"limitada somando zonas", Cards{Main: []Entry{{1, 1}}, Side: []Entry{{1, 1}}}, "no máximo 1 cópia"},
+		{"semilimitada com 2 cópias", Cards{Main: []Entry{{2, 2}}}, ""},
+		{"semilimitada com 3 cópias", Cards{Main: []Entry{{2, 3}}}, "semilimitada"},
+		{"proibida", Cards{Main: []Entry{{3, 1}}}, "proibida"},
+		{"sem restrição segue em 3", Cards{Main: []Entry{{4, 3}}}, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			is := Validate(tt.cards, cat, false)
+			if tt.msg == "" {
+				if len(is) != 0 {
+					t.Fatalf("deveria passar: %+v", is)
+				}
+				return
+			}
+			if !has(is, "cards", tt.msg) {
+				t.Fatalf("esperava aviso com %q em cards, veio %+v", tt.msg, is)
+			}
+		})
+	}
+}

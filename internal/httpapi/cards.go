@@ -112,6 +112,19 @@ func (a *apiServer) ListArchetypes(ctx context.Context, _ gen.ListArchetypesRequ
 	return gen.ListArchetypes200JSONResponse(list), nil
 }
 
+// GetBanlist devolve a lista de cartas proibidas/limitadas aplicada às regras de deck.
+func (a *apiServer) GetBanlist(context.Context, gen.GetBanlistRequestObject) (gen.GetBanlistResponseObject, error) {
+	l := a.bans
+	out := gen.Banlist{Name: l.Name, Format: l.Format, Source: l.Source, Cards: make([]gen.BanlistEntry, 0, len(l.Cards))}
+	if d, err := time.Parse(time.DateOnly, l.EffectiveFrom); err == nil {
+		out.EffectiveFrom = openapi_types.Date{Time: d}
+	}
+	for _, c := range l.Cards {
+		out.Cards = append(out.Cards, gen.BanlistEntry{CardId: c.CardID, Name: c.Name, MaxCopies: c.MaxCopies})
+	}
+	return gen.GetBanlist200JSONResponse(out), nil
+}
+
 func (a *apiServer) ListSets(ctx context.Context, _ gen.ListSetsRequestObject) (gen.ListSetsResponseObject, error) {
 	sets, err := a.cards.Sets(ctx, a.eraEnd)
 	if err != nil {
@@ -149,6 +162,7 @@ func (a *apiServer) toAPICard(c store.Card) gen.Card {
 		TcgDate:       toDate(c.TCGDate),
 		ImageUrl:      a.imageBaseURL + "/" + c.ImagePath,
 		ImageSmallUrl: a.imageBaseURL + "/" + c.ImageSmallPath,
+		MaxCopies:     a.bans.MaxCopies(c.ID),
 	}
 }
 

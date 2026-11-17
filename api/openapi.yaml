@@ -209,6 +209,23 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /banlist:
+    get:
+      tags: [Cards]
+      operationId: getBanlist
+      summary: Lista de cartas proibidas, limitadas e semilimitadas da era
+      description: |
+        Cartas que não aparecem aqui podem ter até 3 cópias. O servidor aplica a lista ao criar,
+        editar, importar e copiar decks (422 com a carta e o limite).
+      security: []
+      responses:
+        '200':
+          description: Lista vigente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Banlist'
+
   /archetypes:
     get:
       tags: [Cards]
@@ -775,7 +792,7 @@ components:
 
     Card:
       type: object
-      required: [id, name, type, desc, imageUrl, imageSmallUrl]
+      required: [id, name, type, desc, imageUrl, imageSmallUrl, maxCopies]
       properties:
         id:
           type: integer
@@ -804,6 +821,37 @@ components:
           description: Data original de lançamento no TCG
         imageUrl: { type: string, format: uri }
         imageSmallUrl: { type: string, format: uri }
+        maxCopies:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: |
+            Máximo de cópias num deck pela lista de proibidas/limitadas da era (veja `GET /banlist`):
+            0 = proibida, 1 = limitada, 2 = semilimitada, 3 = sem restrição.
+
+    BanlistEntry:
+      type: object
+      required: [cardId, name, maxCopies]
+      properties:
+        cardId: { type: integer, format: int64 }
+        name: { type: string }
+        maxCopies:
+          type: integer
+          minimum: 0
+          maximum: 2
+          description: 0 = proibida, 1 = limitada, 2 = semilimitada
+
+    Banlist:
+      type: object
+      required: [name, format, effectiveFrom, source, cards]
+      properties:
+        name: { type: string, example: OCG - outubro de 2003 }
+        format: { type: string, example: OCG }
+        effectiveFrom: { type: string, format: date, description: Início da vigência da lista }
+        source: { type: string }
+        cards:
+          type: array
+          items: { $ref: '#/components/schemas/BanlistEntry' }
 
     CardPage:
       type: object

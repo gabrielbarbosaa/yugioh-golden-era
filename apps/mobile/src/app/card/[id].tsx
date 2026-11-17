@@ -12,6 +12,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { useCollection } from '@/lib/collection';
+import { banlistLabel } from '@/lib/deck-rules';
 import { describeError } from '@/lib/errors';
 import { useSession } from '@/lib/session';
 
@@ -109,6 +110,7 @@ export default function CardDetailScreen() {
             <Fact label="ATK" value={card.atk} />
             <Fact label="DEF" value={card.def} />
             <Fact label="Arquétipo" value={card.archetype} />
+            <Fact label="Lista da era" value={banlistLabel(card)} />
             <Fact label="Lançamento (OCG)" value={card.ocgDate} />
           </ThemedView>
           <ThemedText style={styles.desc}>{card.desc}</ThemedText>

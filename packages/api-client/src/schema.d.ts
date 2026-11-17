@@ -127,6 +127,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/banlist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista de cartas proibidas, limitadas e semilimitadas da era
+         * @description Cartas que não aparecem aqui podem ter até 3 cópias. O servidor aplica a lista ao criar,
+         *     editar, importar e copiar decks (422 com a carta e o limite).
+         */
+        get: operations["getBanlist"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/archetypes": {
         parameters: {
             query?: never;
@@ -499,6 +520,31 @@ export interface components {
             imageUrl: string;
             /** Format: uri */
             imageSmallUrl: string;
+            /**
+             * @description Máximo de cópias num deck pela lista de proibidas/limitadas da era (veja `GET /banlist`):
+             *     0 = proibida, 1 = limitada, 2 = semilimitada, 3 = sem restrição.
+             */
+            maxCopies: number;
+        };
+        BanlistEntry: {
+            /** Format: int64 */
+            cardId: number;
+            name: string;
+            /** @description 0 = proibida, 1 = limitada, 2 = semilimitada */
+            maxCopies: number;
+        };
+        Banlist: {
+            /** @example OCG - outubro de 2003 */
+            name: string;
+            /** @example OCG */
+            format: string;
+            /**
+             * Format: date
+             * @description Início da vigência da lista
+             */
+            effectiveFrom: string;
+            source: string;
+            cards: components["schemas"]["BanlistEntry"][];
         };
         CardPage: {
             items: components["schemas"]["Card"][];
@@ -867,6 +913,26 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
+        };
+    };
+    getBanlist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista vigente */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Banlist"];
+                };
+            };
         };
     };
     listArchetypes: {

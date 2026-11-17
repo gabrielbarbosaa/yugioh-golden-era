@@ -54,12 +54,29 @@ type CardInfo struct {
 	Type        string
 	Level       *int
 	IsExtraDeck bool
+	// Limit é o máximo de cópias imposto pela lista de proibidas/limitadas (0 = proibida, 1 = limitada,
+	// 2 = semilimitada). Nulo significa sem restrição, ou seja, o máximo geral (MaxCopies).
+	Limit *int
 }
 
 // Issue descreve um problema de validação em um campo.
 type Issue struct {
 	Field   string
 	Message string
+}
+
+func limitName(limit int) string {
+	if limit == 1 {
+		return "limitada"
+	}
+	return "semilimitada"
+}
+
+func copyWord(n int) string {
+	if n == 1 {
+		return "cópia"
+	}
+	return "cópias"
 }
 
 func total(es []Entry) int {
@@ -113,8 +130,15 @@ func Validate(c Cards, info map[int64]CardInfo, public bool) []Issue {
 	}
 
 	for id, n := range copies {
-		if n > MaxCopies {
-			issues = append(issues, Issue{"cards", fmt.Sprintf("%q excede o limite de %d cópias somando todas as zonas (%d)", info[id].Name, MaxCopies, n)})
+		ci := info[id]
+		switch {
+		case ci.Limit != nil && *ci.Limit == 0:
+			issues = append(issues, Issue{"cards", fmt.Sprintf("%q é proibida na lista de cartas da era", ci.Name)})
+		case ci.Limit != nil && n > *ci.Limit:
+			issues = append(issues, Issue{"cards", fmt.Sprintf("%q é %s na lista da era: no máximo %d %s somando todas as zonas (tem %d)",
+				ci.Name, limitName(*ci.Limit), *ci.Limit, copyWord(*ci.Limit), n)})
+		case n > MaxCopies:
+			issues = append(issues, Issue{"cards", fmt.Sprintf("%q excede o limite de %d cópias somando todas as zonas (%d)", ci.Name, MaxCopies, n)})
 		}
 	}
 

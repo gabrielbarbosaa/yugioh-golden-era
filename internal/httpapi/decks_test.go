@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/golden-era/api/internal/auth"
+	"github.com/golden-era/api/internal/banlist"
 	"github.com/golden-era/api/internal/deck"
 	"github.com/golden-era/api/internal/store"
 )
@@ -140,6 +141,12 @@ func (f *fakeDecks) UserExists(_ context.Context, username string) (bool, error)
 
 func newDeckServer(t *testing.T) *httptest.Server {
 	t.Helper()
+	return newDeckServerWithBanlist(t, nil)
+}
+
+// newDeckServerWithBanlist sobe o servidor com uma lista de proibidas/limitadas própria (nil = a embutida).
+func newDeckServerWithBanlist(t *testing.T, list *banlist.List) *httptest.Server {
+	t.Helper()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	users, cards := newFakeUsers(), &fakeCards{}
 	decks := &fakeDecks{decks: map[string]*store.Deck{}, users: users, cards: cards}
@@ -150,6 +157,7 @@ func newDeckServer(t *testing.T) *httptest.Server {
 		Social:       &fakeSocial{decks: decks, users: users, likes: map[[2]string]bool{}},
 		Tokens:       auth.NewTokens("test-secret-test-secret-test-secret-12", time.Minute, time.Hour),
 		ImageBaseURL: "http://img",
+		Banlist:      list,
 	}))
 	t.Cleanup(srv.Close)
 	return srv
