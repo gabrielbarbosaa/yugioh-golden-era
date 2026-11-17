@@ -1005,3 +1005,32 @@ main.container {
   border-color: var(--limited);
   color: var(--limited);
 }
+/* ---- Duelo (protótipo) ---- */
+.duel-lobby { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin: 24px 0; }
+.duel-lobby form { display: flex; gap: 8px; }
+.duel-lobby input { text-transform: uppercase; letter-spacing: 0.2em; width: 9em; }
+.duel-code { font-family: var(--font-display); color: var(--gold-light); letter-spacing: 0.2em; }
+.duel-error { color: var(--danger); margin: 8px 0; }
+.duel { display: grid; gap: 12px; margin: 16px 0 40px; }
+.duel-head, .duel-side { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.duel-turn { font-family: var(--font-display); color: var(--muted); }
+.duel-turn.mine { color: var(--gold-light); }
+.duel-result { font-family: var(--font-display); font-size: 1.4rem; color: var(--gold); }
+.duel-row { display: grid; grid-template-columns: repeat(5, minmax(0, 118px)); gap: 10px; justify-content: center; }
+.duel-zone, .duel-card {
+  position: relative; display: block; padding: 0; background: var(--surface); color: var(--text);
+  border: 1px dashed var(--border); border-radius: 8px; aspect-ratio: 118 / 172; overflow: hidden; cursor: pointer;
+}
+.duel-zone.empty { cursor: default; }
+.duel-zone img, .duel-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.duel-zone.pos-defense img, .duel-zone.pos-facedown .duel-back { transform: rotate(90deg) scale(0.72); }
+.duel-zone:not(.empty) { border-style: solid; }
+.duel-zone.selected, .duel-card.selected { outline: 2px solid var(--gold); box-shadow: 0 0 14px rgba(230, 180, 34, 0.6); }
+.duel-card[disabled] { opacity: 0.45; cursor: default; }
+.duel-back { display: block; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, #2a2160, #2a2160 8px, #3a2f7c 8px, #3a2f7c 16px); }
+.duel-stats { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(10, 9, 25, 0.85); font-size: 0.72rem; padding: 2px 4px; text-align: center; }
+.duel-hand { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.duel-hand .duel-card { width: 96px; }
+.duel-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.duel-log { max-height: 180px; overflow: auto; margin: 0; padding-left: 20px; color: var(--muted); font-size: 0.85rem; }
+@media (max-width: 640px) { .duel-row { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; } .duel-hand .duel-card { width: 70px; } }

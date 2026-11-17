@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   // O cliente da API é consumido como código-fonte TypeScript (sem etapa de build).
-  transpilePackages: ["@golden-era/api-client"],
+  transpilePackages: ["@golden-era/api-client", "@golden-era/duel-engine"],
   // Servidor autocontido para a imagem Docker (`.next/standalone`, só com o que o site usa).
   output: "standalone",
   // O workspace npm fica na raiz do repositório; sem isto o rastreamento de arquivos perderia @golden-era/api-client.

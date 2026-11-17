@@ -1,0 +1,21 @@
+{
+  "name": "@golden-era/duel-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Servidor de duelo (WebSocket): salas, ingressos de entrada e o motor de regras como autoridade.",
+  "type": "module",
+  "scripts": {
+    "start": "node src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test src/*.test.ts"
+  },
+  "dependencies": {
+    "@golden-era/duel-engine": "*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/ws": "^8.5.12",
+    "typescript": "~5.9.2"
+  }
+}

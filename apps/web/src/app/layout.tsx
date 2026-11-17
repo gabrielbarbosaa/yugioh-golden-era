@@ -30,6 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/decks">Decks</Link>
               <Link href="/banlist">Lista da era</Link>
               <Link href="/collection">Coleção</Link>
+              <Link href="/duel">Duelo</Link>
               {/* Lê o cookie de sessão: fica num Suspense para o resto do topo continuar estático. */}
               <Suspense fallback={<span className="usermenu" />}>
                 <UserMenu />

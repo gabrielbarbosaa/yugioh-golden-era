@@ -119,7 +119,7 @@ export type Action = PlayAction | AttackAction | ChangePositionAction | EndTurnA
 
 export type GameEvent =
   | { type: "draw"; player: PlayerIndex; cardId: number }
-  | { type: "play"; player: PlayerIndex; cardId: number; zone: number; position: Position; star: Star; materials: number[] }
+  | { type: "play"; player: PlayerIndex; cardId: number; zone: number; position: Position; star: Star | null; materials: number[] }
   | { type: "position"; player: PlayerIndex; zone: number; position: Position }
   | { type: "attack"; player: PlayerIndex; zone: number; target: number | "direct" }
   | { type: "flip"; player: PlayerIndex; zone: number; cardId: number }
