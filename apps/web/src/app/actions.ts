@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { api, describeError } from "@/lib/api";
@@ -60,7 +60,13 @@ export async function register(_prev: FormState, data: FormData): Promise<FormSt
 
   let tokens: Tokens | undefined;
   try {
-    const res = await api.POST("/auth/register", { body: { email, username, password } });
+    // O limite de cadastros da API é por IP. Repassamos o IP de quem está no navegador (a API só o usa se
+    // TRUST_PROXY=true; senão enxerga o IP deste servidor e todos os cadastros da web dividem um limite).
+    const forwarded = (await headers()).get("x-forwarded-for");
+    const res = await api.POST("/auth/register", {
+      body: { email, username, password },
+      headers: forwarded ? { "X-Forwarded-For": forwarded } : undefined,
+    });
     if (!res.data) {
       const problem = res.error as { errors?: { message?: string }[] } | undefined;
       const reasons = (problem?.errors ?? []).map((e) => e.message).filter(Boolean);

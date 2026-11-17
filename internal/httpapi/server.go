@@ -31,6 +31,7 @@ type Deps struct {
 	EraEnd       time.Time     // limite superior da era, usado ao listar sets
 	CORSOrigins  []string      // origens de navegador autorizadas ("*" libera todas)
 	Banlist      *banlist.List // lista de proibidas/limitadas aplicada aos decks (nil usa a embutida)
+	TrustProxy   bool          // usa X-Forwarded-For como IP do cliente (só atrás de um proxy confiável)
 }
 
 // apiServer implementa as operações já prontas de gen.StrictServerInterface.
@@ -48,6 +49,8 @@ type apiServer struct {
 	imageBaseURL string
 	eraEnd       time.Time
 	logins       *loginLimiter
+	registers    *ipLimiter
+	trustProxy   bool
 	bans         *banlist.List
 }
 
@@ -118,13 +121,15 @@ func NewHandler(log *slog.Logger, version string, deps Deps) http.Handler {
 		imageBaseURL: deps.ImageBaseURL,
 		eraEnd:       deps.EraEnd,
 		logins:       newLoginLimiter(loginMaxFails, loginWindow),
+		registers:    newIPLimiter(registerMaxPerIP, registerWindow),
+		trustProxy:   deps.TrustProxy,
 		bans:         deps.Banlist,
 	}
 	if srv.bans == nil {
 		srv.bans = banlist.Default()
 	}
 	// O último da lista é o mais externo: primeiro barra o que não existe (501), depois autentica.
-	mws := []gen.StrictMiddlewareFunc{srv.authenticate, notImplemented}
+	mws := []gen.StrictMiddlewareFunc{srv.withClientIP, srv.authenticate, notImplemented}
 	strict := gen.NewStrictHandlerWithOptions(srv, mws, gen.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			writeProblem(w, http.StatusBadRequest, err.Error())

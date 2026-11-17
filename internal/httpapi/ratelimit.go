@@ -1,8 +1,14 @@
 package httpapi
 
 import (
+	"context"
+	"net"
+	"net/http"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/golden-era/api/internal/api/gen"
 )
 
 // Política do login: depois de loginMaxFails senhas erradas para o mesmo e-mail dentro da janela,
@@ -82,4 +88,83 @@ func (l *loginLimiter) reset(key string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	delete(l.entries, key)
+}
+
+// Cadastros: no máximo registerMaxPerIP por janela e por IP. Contam todas as tentativas (sucesso ou não), porque
+// o que se quer barrar é a criação em massa de contas. Atrás de um proxy confiável, ligue TRUST_PROXY para usar o
+// IP original (X-Forwarded-For); sem isso, vale o IP da conexão. O site Next.js chama a API do próprio servidor,
+// então todos os cadastros feitos pela web compartilham um IP e um mesmo limite.
+const (
+	registerMaxPerIP = 20
+	registerWindow   = time.Hour
+)
+
+type counter struct {
+	count   int
+	resetAt time.Time
+}
+
+// ipLimiter conta tentativas por chave (IP) numa janela fixa. É seguro para uso concorrente.
+type ipLimiter struct {
+	mu      sync.Mutex
+	max     int
+	window  time.Duration
+	now     func() time.Time
+	entries map[string]*counter
+}
+
+func newIPLimiter(max int, window time.Duration) *ipLimiter {
+	return &ipLimiter{max: max, window: window, now: time.Now, entries: make(map[string]*counter)}
+}
+
+// allow registra uma tentativa e informa se ela cabe no limite; se não, devolve quanto falta para a janela acabar.
+func (l *ipLimiter) allow(key string) (time.Duration, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	now := l.now()
+	if len(l.entries) >= limiterSweepAt {
+		for k, c := range l.entries {
+			if !now.Before(c.resetAt) {
+				delete(l.entries, k)
+			}
+		}
+	}
+	c, ok := l.entries[key]
+	if !ok || !now.Before(c.resetAt) {
+		c = &counter{resetAt: now.Add(l.window)}
+		l.entries[key] = c
+	}
+	if c.count >= l.max {
+		return c.resetAt.Sub(now), false
+	}
+	c.count++
+	return 0, true
+}
+
+type clientIPKey struct{}
+
+// clientIP devolve o IP do cliente: o da conexão, ou o primeiro de X-Forwarded-For quando há proxy confiável.
+func clientIP(r *http.Request, trustProxy bool) string {
+	if trustProxy {
+		if first, _, _ := strings.Cut(r.Header.Get("X-Forwarded-For"), ","); strings.TrimSpace(first) != "" {
+			return strings.TrimSpace(first)
+		}
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
+}
+
+// withClientIP guarda o IP do cliente no contexto dos handlers tipados (que não recebem o *http.Request).
+func (a *apiServer) withClientIP(next gen.StrictHandlerFunc, _ string) gen.StrictHandlerFunc {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, req any) (any, error) {
+		return next(context.WithValue(ctx, clientIPKey{}, clientIP(r, a.trustProxy)), w, r, req)
+	}
+}
+
+func clientIPFrom(ctx context.Context) string {
+	ip, _ := ctx.Value(clientIPKey{}).(string)
+	return ip
 }

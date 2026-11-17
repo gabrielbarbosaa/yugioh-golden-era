@@ -75,6 +75,7 @@ func run() error {
 			ImageBaseURL: cfg.ImageBaseURL,
 			EraEnd:       eraEnd,
 			CORSOrigins:  cfg.CORSOrigins,
+			TrustProxy:   cfg.TrustProxy,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,

@@ -3,10 +3,15 @@ package httpapi
 import (
 	"bytes"
 	"encoding/json"
+	"io"
+	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/golden-era/api/internal/auth"
 )
 
 // postJSON devolve a resposta crua, para conferir cabeçalhos que `call` não expõe.
@@ -109,5 +114,112 @@ func TestSuccessfulLoginResetsFailureCount(t *testing.T) {
 			call(t, "POST", srv.URL+"/v1/auth/login", "", wrong, http.StatusUnauthorized, nil)
 		}
 		call(t, "POST", srv.URL+"/v1/auth/login", "", right, http.StatusOK, nil)
+	}
+}
+
+func TestIPLimiterCountsPerKeyAndExpires(t *testing.T) {
+	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	l := newIPLimiter(2, time.Hour)
+	l.now = func() time.Time { return now }
+
+	for i := 0; i < 2; i++ {
+		if _, ok := l.allow("1.1.1.1"); !ok {
+			t.Fatalf("tentativa %d deveria caber", i+1)
+		}
+	}
+	wait, ok := l.allow("1.1.1.1")
+	if ok || wait != time.Hour {
+		t.Fatalf("3a tentativa: ok=%v wait=%v, esperado bloqueio de 1h", ok, wait)
+	}
+	if _, ok := l.allow("2.2.2.2"); !ok {
+		t.Error("outro IP nao pode ser afetado")
+	}
+	now = now.Add(time.Hour)
+	if _, ok := l.allow("1.1.1.1"); !ok {
+		t.Error("deveria liberar quando a janela acaba")
+	}
+}
+
+func TestClientIP(t *testing.T) {
+	r := httptest.NewRequest("GET", "/", nil)
+	r.RemoteAddr = "10.0.0.5:51234"
+	r.Header.Set("X-Forwarded-For", "203.0.113.7, 10.0.0.1")
+
+	if got := clientIP(r, false); got != "10.0.0.5" {
+		t.Errorf("sem proxy confiavel: %q (X-Forwarded-For deve ser ignorado)", got)
+	}
+	if got := clientIP(r, true); got != "203.0.113.7" {
+		t.Errorf("com proxy confiavel: %q, esperado o primeiro de X-Forwarded-For", got)
+	}
+	r.Header.Del("X-Forwarded-For")
+	if got := clientIP(r, true); got != "10.0.0.5" {
+		t.Errorf("sem cabecalho cai para a conexao: %q", got)
+	}
+}
+
+func registerBody(i int) map[string]string {
+	n := strconv.Itoa(i)
+	return map[string]string{"email": "u" + n + "@example.com", "username": "user_" + n, "password": "senha-forte-123"}
+}
+
+func TestRegisterIsThrottledPerIP(t *testing.T) {
+	srv := newAuthServer(t)
+	for i := 0; i < registerMaxPerIP; i++ {
+		call(t, "POST", srv.URL+"/v1/auth/register", "", registerBody(i), http.StatusCreated, nil)
+	}
+	res := postJSON(t, srv.URL+"/v1/auth/register", registerBody(999))
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("status = %d, esperado 429", res.StatusCode)
+	}
+	if secs, err := strconv.Atoi(res.Header.Get("Retry-After")); err != nil || secs < 1 {
+		t.Errorf("Retry-After = %q", res.Header.Get("Retry-After"))
+	}
+	// Outras operacoes seguem funcionando para o mesmo IP.
+	call(t, "POST", srv.URL+"/v1/auth/login", "", map[string]string{"email": "u0@example.com", "password": "senha-forte-123"}, http.StatusOK, nil)
+}
+
+func TestRegisterLimitUsesForwardedIPOnlyWhenTrusted(t *testing.T) {
+	newServer := func(trust bool) *httptest.Server {
+		log := slog.New(slog.NewTextHandler(io.Discard, nil))
+		srv := httptest.NewServer(NewHandler(log, "test", Deps{
+			Cards: &fakeCards{}, Users: newFakeUsers(), TrustProxy: trust,
+			Tokens: auth.NewTokens("test-secret-test-secret-test-secret-12", time.Minute, time.Hour),
+		}))
+		t.Cleanup(srv.Close)
+		return srv
+	}
+	post := func(srv *httptest.Server, i int, xff string) int {
+		b, _ := json.Marshal(registerBody(i))
+		req, _ := http.NewRequest("POST", srv.URL+"/v1/auth/register", bytes.NewReader(b))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Forwarded-For", xff)
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		return res.StatusCode
+	}
+
+	// Confiando no proxy: IPs de origem diferentes tem limites independentes.
+	trusted := newServer(true)
+	for i := 0; i < registerMaxPerIP; i++ {
+		post(trusted, i, "198.51.100.1")
+	}
+	if got := post(trusted, 100, "198.51.100.1"); got != http.StatusTooManyRequests {
+		t.Errorf("mesmo IP de origem: %d, esperado 429", got)
+	}
+	if got := post(trusted, 101, "198.51.100.2"); got != http.StatusCreated {
+		t.Errorf("outro IP de origem: %d, esperado 201", got)
+	}
+
+	// Sem confiar: variar o cabecalho nao burla o limite.
+	untrusted := newServer(false)
+	for i := 0; i < registerMaxPerIP; i++ {
+		post(untrusted, i, "198.51.100."+strconv.Itoa(i))
+	}
+	if got := post(untrusted, 200, "203.0.113.99"); got != http.StatusTooManyRequests {
+		t.Errorf("X-Forwarded-For forjado deveria ser ignorado: %d, esperado 429", got)
 	}
 }

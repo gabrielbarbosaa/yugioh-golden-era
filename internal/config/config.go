@@ -29,6 +29,10 @@ type Config struct {
 	MigrateOnStart bool // aplica as migrations ao subir (MIGRATE_ON_START=true)
 
 	CORSOrigins []string // CORS_ORIGINS, separadas por vírgula; padrão: Expo web e Next.js em dev
+
+	// TrustProxy (TRUST_PROXY=true) usa o primeiro IP de X-Forwarded-For como IP do cliente nos limites de uso.
+	// Ligue só se a API está atrás de um proxy que sobrescreve esse cabeçalho; senão qualquer um forja o próprio IP.
+	TrustProxy bool
 }
 
 // DevJWTSecret é o segredo padrão de desenvolvimento; nunca use em produção.
@@ -55,6 +59,9 @@ func Load(version string) (Config, error) {
 	var err error
 	if cfg.MigrateOnStart, err = strconv.ParseBool(getenv("MIGRATE_ON_START", "false")); err != nil {
 		return Config{}, fmt.Errorf("MIGRATE_ON_START inválido: %w", err)
+	}
+	if cfg.TrustProxy, err = strconv.ParseBool(getenv("TRUST_PROXY", "false")); err != nil {
+		return Config{}, fmt.Errorf("TRUST_PROXY inválido: %w", err)
 	}
 	if cfg.AccessTTL, err = time.ParseDuration(getenv("ACCESS_TOKEN_TTL", "15m")); err != nil {
 		return Config{}, fmt.Errorf("ACCESS_TOKEN_TTL inválido: %w", err)

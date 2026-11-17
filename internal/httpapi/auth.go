@@ -105,6 +105,15 @@ func (a *apiServer) Register(ctx context.Context, req gen.RegisterRequestObject)
 	if b == nil {
 		return nil, badRequest("corpo da requisição ausente")
 	}
+	if wait, ok := a.registers.allow(clientIPFrom(ctx)); !ok {
+		retryAfter := int(wait.Seconds()) + 1
+		return gen.Register429ApplicationProblemPlusJSONResponse{
+			TooManyRequestsApplicationProblemPlusJSONResponse: gen.TooManyRequestsApplicationProblemPlusJSONResponse{
+				Body:    newProblem(http.StatusTooManyRequests, "muitos cadastros deste endereço; tente de novo mais tarde"),
+				Headers: gen.TooManyRequestsResponseHeaders{RetryAfter: &retryAfter},
+			},
+		}, nil
+	}
 	email := strings.TrimSpace(string(b.Email))
 	var errs []fieldError
 	if addr, err := mail.ParseAddress(email); err != nil || addr.Address != email || len(email) > 254 {
