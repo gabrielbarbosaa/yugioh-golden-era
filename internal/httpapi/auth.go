@@ -156,19 +156,35 @@ func (a *apiServer) Login(ctx context.Context, req gen.LoginRequestObject) (gen.
 			newProblem(http.StatusUnauthorized, "e-mail ou senha incorretos")),
 	}
 
-	u, err := a.users.ByEmail(ctx, strings.TrimSpace(string(b.Email)))
+	email := strings.TrimSpace(string(b.Email))
+	key := strings.ToLower(email)
+	// Bloqueado antes de tocar no banco ou no bcrypt: tentar de novo não custa nada ao servidor.
+	if wait, blocked := a.logins.blocked(key); blocked {
+		retryAfter := int(wait.Seconds()) + 1 // arredonda para cima: nunca promete antes da hora
+		return gen.Login429ApplicationProblemPlusJSONResponse{
+			TooManyRequestsApplicationProblemPlusJSONResponse: gen.TooManyRequestsApplicationProblemPlusJSONResponse{
+				Body:    newProblem(http.StatusTooManyRequests, "muitas tentativas de login; tente de novo mais tarde"),
+				Headers: gen.TooManyRequestsResponseHeaders{RetryAfter: &retryAfter},
+			},
+		}, nil
+	}
+
+	u, err := a.users.ByEmail(ctx, email)
 	if errors.Is(err, store.ErrNotFound) {
 		// Gasta o mesmo tempo de uma conta real para não revelar se o e-mail existe.
 		dummyHashOnce.Do(func() { dummyHash, _ = auth.HashPassword("dummy-password") })
 		auth.CheckPassword(dummyHash, b.Password)
+		a.logins.fail(key) // também conta para e-mails inexistentes: o comportamento não revela quem tem conta
 		return invalid, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 	if !auth.CheckPassword(u.PasswordHash, b.Password) {
+		a.logins.fail(key)
 		return invalid, nil
 	}
+	a.logins.reset(key)
 	tokens, err := a.issueTokens(ctx, u.ID)
 	if err != nil {
 		return nil, err

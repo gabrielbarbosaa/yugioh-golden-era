@@ -47,7 +47,11 @@ func Load(version string) (Config, error) {
 		EraEndDate:      getenv("ERA_END_DATE", "2003-12-31"),
 		JWTSecret:       getenv("JWT_SECRET", DevJWTSecret),
 	}
-	cfg.CORSOrigins = strings.Split(getenv("CORS_ORIGINS", "http://localhost:8081,http://localhost:19006,http://localhost:3000"), ",")
+	for _, o := range strings.Split(getenv("CORS_ORIGINS", "http://localhost:8081,http://localhost:19006,http://localhost:3000"), ",") {
+		if o = strings.TrimSpace(o); o != "" { // "a, b" com espaço ou vírgula sobrando não pode virar uma origem inválida
+			cfg.CORSOrigins = append(cfg.CORSOrigins, o)
+		}
+	}
 	var err error
 	if cfg.MigrateOnStart, err = strconv.ParseBool(getenv("MIGRATE_ON_START", "false")); err != nil {
 		return Config{}, fmt.Errorf("MIGRATE_ON_START inválido: %w", err)
@@ -60,6 +64,10 @@ func Load(version string) (Config, error) {
 	}
 	if len(cfg.JWTSecret) < 32 {
 		return Config{}, fmt.Errorf("JWT_SECRET deve ter pelo menos 32 caracteres")
+	}
+	// Quem declara produção não pode subir com o segredo público de desenvolvimento (qualquer um forjaria tokens).
+	if strings.EqualFold(getenv("APP_ENV", ""), "production") && cfg.JWTSecret == DevJWTSecret {
+		return Config{}, fmt.Errorf("APP_ENV=production exige um JWT_SECRET próprio (o padrão de desenvolvimento não é aceito)")
 	}
 	if _, err := time.Parse(time.DateOnly, cfg.EraEndDate); err != nil {
 		return Config{}, fmt.Errorf("ERA_END_DATE inválida %q: %w", cfg.EraEndDate, err)

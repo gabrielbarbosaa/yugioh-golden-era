@@ -626,6 +626,17 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
+        /** @description Muitas tentativas seguidas; aguarde o tempo de `Retry-After` */
+        TooManyRequests: {
+            headers: {
+                /** @description Segundos até uma nova tentativa ser aceita */
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
         /** @description Sem permissão para este recurso */
         Forbidden: {
             headers: {
@@ -745,6 +756,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     refreshToken: {

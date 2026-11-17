@@ -93,6 +93,8 @@ paths:
                 $ref: '#/components/schemas/AuthTokens'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /auth/refresh:
     post:
@@ -672,6 +674,15 @@ components:
   responses:
     Unauthorized:
       description: Credenciais ausentes ou inválidas
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    TooManyRequests:
+      description: Muitas tentativas seguidas; aguarde o tempo de `Retry-After`
+      headers:
+        Retry-After:
+          description: Segundos até uma nova tentativa ser aceita
+          schema: { type: integer, minimum: 1 }
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }

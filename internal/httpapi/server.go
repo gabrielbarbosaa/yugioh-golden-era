@@ -45,6 +45,7 @@ type apiServer struct {
 	tokens       *auth.Tokens
 	imageBaseURL string
 	eraEnd       time.Time
+	logins       *loginLimiter
 }
 
 // implemented lista as operações (nome Go, como o gerador as passa ao middleware) que têm handler.
@@ -111,6 +112,7 @@ func NewHandler(log *slog.Logger, version string, deps Deps) http.Handler {
 		tokens:       deps.Tokens,
 		imageBaseURL: deps.ImageBaseURL,
 		eraEnd:       deps.EraEnd,
+		logins:       newLoginLimiter(loginMaxFails, loginWindow),
 	}
 	// O último da lista é o mais externo: primeiro barra o que não existe (501), depois autentica.
 	mws := []gen.StrictMiddlewareFunc{srv.authenticate, notImplemented}
