@@ -130,6 +130,7 @@ function Editor({
   social?: Social;
 }) {
   const theme = useTheme();
+  const { signedIn } = useSession();
   const [deckId, setDeckId] = useState(initialId);
   const [draft, setDraft] = useState(initial);
   const [known, setKnown] = useState<Record<number, Card>>({}); // cartas escolhidas na busca (já com detalhes)
@@ -173,6 +174,24 @@ function Editor({
         setDeckId(data.id);
         setMessage({ text: 'Deck salvo.', ok: true });
       }
+    } catch (e) {
+      setMessage({ text: describeError(e), ok: false });
+    }
+    setSaving(false);
+  }
+
+  // Decks públicos de outras pessoas: cria uma cópia privada na conta do jogador e abre o editor.
+  async function copyToMine() {
+    if (!deckId || saving) return;
+    setSaving(true);
+    setMessage(null);
+    try {
+      const { data, error } = await api.POST('/decks/{deckId}/copy', { params: { path: { deckId } } });
+      if (data) {
+        router.replace({ pathname: '/deck/[id]', params: { id: data.id } });
+        return;
+      }
+      setMessage({ text: describeError(error), ok: false });
     } catch (e) {
       setMessage({ text: describeError(e), ok: false });
     }
@@ -310,6 +329,29 @@ function Editor({
           )}
         </ThemedView>
       ))}
+
+      {readOnly && deckId && signedIn ? (
+        <ThemedView style={styles.section}>
+          <Pressable
+            onPress={copyToMine}
+            disabled={saving}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.save, { backgroundColor: theme.text }, (pressed || saving) && styles.dim]}>
+            {saving ? (
+              <ActivityIndicator color={theme.background} />
+            ) : (
+              <ThemedText type="smallBold" style={{ color: theme.background }}>
+                Copiar para minha conta
+              </ThemedText>
+            )}
+          </Pressable>
+          {message ? (
+            <ThemedText type="small" style={styles.error} accessibilityRole="alert">
+              {message.text}
+            </ThemedText>
+          ) : null}
+        </ThemedView>
+      ) : null}
 
       {deckId ? <YdkExport deckId={deckId} /> : null}
 
