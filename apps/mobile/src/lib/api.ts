@@ -1,6 +1,8 @@
 import { createApiClient } from '@golden-era/api-client';
 import { Platform } from 'react-native';
 
+import { tokenStore } from '@/lib/token-store';
+
 /**
  * URL da API (com o prefixo /v1). Em celular físico `localhost` não funciona:
  * defina EXPO_PUBLIC_API_URL com o IP da máquina, ex.: http://192.168.1.4:8080/v1 (veja .env.example).
@@ -10,4 +12,5 @@ const fallback = Platform.OS === 'android' ? 'http://10.0.2.2:8080/v1' : 'http:/
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? fallback;
 
-export const api = createApiClient({ baseUrl: API_URL });
+// Quando o refresh é recusado o cliente limpa os tokens pelo tokenStore, e a sessão (session.tsx) reage a isso.
+export const api = createApiClient({ baseUrl: API_URL, tokens: tokenStore });
