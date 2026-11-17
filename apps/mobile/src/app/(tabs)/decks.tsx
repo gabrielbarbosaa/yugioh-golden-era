@@ -2,6 +2,7 @@ import type { DeckSummary } from '@golden-era/api-client';
 import { FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DeckRow } from '@/components/deck-row';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -9,22 +10,6 @@ import { BottomTabInset, MaxContentWidth, Spacing, TopTabInset } from '@/constan
 import { usePagedList } from '@/hooks/use-paged-list';
 import { api } from '@/lib/api';
 
-function DeckRow({ deck }: { deck: DeckSummary }) {
-  return (
-    <ThemedView type="backgroundElement" style={styles.row}>
-      <ThemedText type="smallBold" numberOfLines={1}>
-        {deck.name}
-      </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-        por @{deck.owner.username}
-        {deck.archetype ? ` · ${deck.archetype}` : ''}
-      </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        ♥ {deck.likeCount} · 💬 {deck.commentCount}
-      </ThemedText>
-    </ThemedView>
-  );
-}
 
 export default function DecksScreen() {
   const { items, loading, error, loadMore, reload } = usePagedList<DeckSummary>(
@@ -74,5 +59,4 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 28, lineHeight: 34, paddingTop: Spacing.two },
   list: { gap: Spacing.two, paddingBottom: BottomTabInset + Spacing.four },
-  row: { borderRadius: Spacing.three, padding: Spacing.three, gap: Spacing.half },
 });
