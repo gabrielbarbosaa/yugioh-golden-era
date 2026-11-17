@@ -5,16 +5,32 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 
 import { CARD_ASPECT } from '@/components/card-tile';
+import { LimitBadge } from '@/components/limit-badge';
+import { TiltView } from '@/components/tilt-view';
 import { QuantityStepper } from '@/components/quantity-stepper';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { api } from '@/lib/api';
+import { useTheme } from '@/hooks/use-theme';
 import { useCollection } from '@/lib/collection';
 import { banlistLabel } from '@/lib/deck-rules';
 import { describeError } from '@/lib/errors';
 import { useSession } from '@/lib/session';
+
+function Stat({ label, value }: { label: string; value?: number | null }) {
+  return (
+    <ThemedView type="backgroundSelected" style={styles.stat}>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
+        {label}
+      </ThemedText>
+      <ThemedText type="subtitle" style={styles.statValue}>
+        {value ?? '?'}
+      </ThemedText>
+    </ThemedView>
+  );
+}
 
 function Fact({ label, value }: { label: string; value?: string | number | null }) {
   if (value === undefined || value === null || value === '') return null;
@@ -57,6 +73,7 @@ function Owned({ cardId }: { cardId: number }) {
 }
 
 export default function CardDetailScreen() {
+  const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   // O resultado guarda para qual `id` vale; enquanto não bater, a tela mostra o carregamento.
   const [result, setResult] = useState<{ id: string; card?: Card; error?: string } | null>(null);
@@ -91,29 +108,47 @@ export default function CardDetailScreen() {
         <StateMessage loading={!error} message={error ?? undefined} onRetry={error ? load : undefined} />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          <Image
-            source={{ uri: card.imageUrl }}
-            style={styles.art}
-            contentFit="contain"
-            transition={200}
-            accessibilityLabel={card.name}
-          />
+          <TiltView>
+            <ThemedView style={[styles.artFrame, { shadowColor: theme.gold }]}>
+              <Image
+                source={{ uri: card.imageUrl }}
+                style={styles.art}
+                contentFit="contain"
+                transition={200}
+                accessibilityLabel={card.name}
+              />
+            </ThemedView>
+          </TiltView>
           <ThemedText type="subtitle" style={styles.name}>
             {card.name}
           </ThemedText>
+          {banlistLabel(card) ? (
+            <ThemedView type="backgroundElement" style={[styles.pill, { borderColor: theme.border }]}>
+              <LimitBadge maxCopies={card.maxCopies} />
+              <ThemedText type="small">
+                {banlistLabel(card)} na lista da era
+                {card.maxCopies === 0 ? '' : `: no máximo ${card.maxCopies} ${card.maxCopies === 1 ? 'cópia' : 'cópias'}`}
+              </ThemedText>
+            </ThemedView>
+          ) : null}
+          {card.atk != null || card.def != null ? (
+            <ThemedView style={styles.plate}>
+              <Stat label="ATK" value={card.atk} />
+              <Stat label="DEF" value={card.def} />
+              {card.level != null ? <Stat label="Nível" value={card.level} /> : null}
+            </ThemedView>
+          ) : null}
           <Owned cardId={card.id} />
           <ThemedView style={styles.facts}>
             <Fact label="Tipo" value={card.type} />
             <Fact label="Atributo" value={card.attribute} />
             <Fact label="Espécie" value={card.race} />
-            <Fact label="Nível" value={card.level} />
-            <Fact label="ATK" value={card.atk} />
-            <Fact label="DEF" value={card.def} />
             <Fact label="Arquétipo" value={card.archetype} />
-            <Fact label="Lista da era" value={banlistLabel(card)} />
             <Fact label="Lançamento (OCG)" value={card.ocgDate} />
           </ThemedView>
-          <ThemedText style={styles.desc}>{card.desc}</ThemedText>
+          <ThemedView type="backgroundElement" style={[styles.desc, { borderLeftColor: theme.gold }]}>
+            <ThemedText>{card.desc}</ThemedText>
+          </ThemedView>
         </ScrollView>
       )}
     </ThemedView>
@@ -130,10 +165,16 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
   },
-  art: { width: '70%', maxWidth: 360, aspectRatio: CARD_ASPECT },
+  artFrame: { width: '70%', maxWidth: 360, shadowOpacity: 0.45, shadowRadius: 28, shadowOffset: { width: 0, height: 0 } },
+  art: { width: '100%', aspectRatio: CARD_ASPECT, borderRadius: 6 },
   name: { fontSize: 24, lineHeight: 30, textAlign: 'center' },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, borderWidth: 1, borderRadius: 999, paddingVertical: Spacing.one, paddingLeft: Spacing.one, paddingRight: Spacing.three },
+  plate: { flexDirection: 'row', gap: Spacing.two, alignSelf: 'stretch' },
+  stat: { flex: 1, alignItems: 'center', borderRadius: Spacing.three, paddingVertical: Spacing.two },
+  statLabel: { letterSpacing: 2, fontSize: 11, lineHeight: 14 },
+  statValue: { fontSize: 24, lineHeight: 30 },
   facts: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, justifyContent: 'center' },
-  fact: { borderRadius: Spacing.three, paddingVertical: Spacing.one + 2, paddingHorizontal: Spacing.three },
-  desc: { alignSelf: 'stretch' },
+  fact: { borderRadius: 999, paddingVertical: Spacing.one + 2, paddingHorizontal: Spacing.three },
+  desc: { alignSelf: 'stretch', borderRadius: Spacing.three, borderLeftWidth: 3, padding: Spacing.three },
   owned: { alignItems: 'center', gap: Spacing.two },
 });

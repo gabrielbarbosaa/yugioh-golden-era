@@ -99,7 +99,7 @@ export function AuthForm() {
         onPress={submit}
         disabled={busy}
         accessibilityRole="button"
-        style={({ pressed }) => [styles.button, { backgroundColor: theme.text }, (pressed || busy) && styles.pressed]}>
+        style={({ pressed }) => [styles.button, { backgroundColor: theme.gold }, (pressed || busy) && styles.pressed]}>
         {busy ? (
           <ActivityIndicator color={theme.background} />
         ) : (

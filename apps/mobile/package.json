@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo-google-fonts/cinzel": "^0.4.2",
     "@expo/ui": "~58.0.29",
     "@golden-era/api-client": "*",
     "expo": "~58.0.26",

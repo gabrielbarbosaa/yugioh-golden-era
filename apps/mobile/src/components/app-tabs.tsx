@@ -1,17 +1,14 @@
 import { NativeTabs } from 'expo-router/native-tabs';
-import { useColorScheme } from 'react-native';
-
 import { Colors } from '@/constants/theme';
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const colors = Colors.dark;
 
   return (
     <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
+      backgroundColor={colors.backgroundElement}
+      indicatorColor={colors.backgroundSelected}
+      labelStyle={{ default: { color: colors.textSecondary }, selected: { color: colors.goldLight } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Cartas</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
@@ -22,6 +19,14 @@ export default function AppTabs() {
 
       <NativeTabs.Trigger name="decks">
         <NativeTabs.Trigger.Label>Decks</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          src={require('@/assets/images/tabIcons/explore.png')}
+          renderingMode="template"
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="banlist">
+        <NativeTabs.Trigger.Label>Lista</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/explore.png')}
           renderingMode="template"

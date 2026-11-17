@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { CardGrid } from "@/components/card-grid";
+import { Hero } from "@/components/hero";
 import { Pager, withQuery } from "@/components/pager";
 import { api, describeError } from "@/lib/api";
 
@@ -18,9 +19,8 @@ type SearchParams = Promise<{
 export default function CatalogPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <>
-      <h1>Cartas</h1>
       {/* searchParams só existe no pedido, então tudo que depende dele fica dentro do Suspense. */}
-      <Suspense fallback={<p className="skeleton">Carregando cartas…</p>}>
+      <Suspense fallback={<h1>Golden Era</h1>}>
         <Results searchParams={searchParams} />
       </Suspense>
     </>
@@ -72,6 +72,14 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <>
+      {!filtered && !cursor ? (
+        <>
+          <Hero />
+          <h2 id="cartas">Todas as cartas</h2>
+        </>
+      ) : (
+        <h1>{filtered ? "Resultados" : "Cartas"}</h1>
+      )}
       <form className="search filters" action="/">
         <input type="search" name="q" defaultValue={q} placeholder="Buscar por nome (ex.: Dark Magician)" aria-label="Buscar cartas" />
         <button className="button" type="submit">

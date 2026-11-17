@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ArtBanner } from '@/components/art-banner';
 import { CardTile } from '@/components/card-tile';
 import { activeFilterCount, EMPTY_FILTERS, FilterSheet, type CardFilters } from '@/components/filter-sheet';
 import { StateMessage } from '@/components/state-message';
@@ -45,9 +46,7 @@ export default function CardsScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <ThemedText type="subtitle" style={styles.title}>
-          Cartas
-        </ThemedText>
+        <ArtBanner cardId={46986414} title="Cartas" subtitle="A era dos Duel Monsters" />
         <ThemedView style={styles.searchRow}>
           <TextInput
             value={query}
@@ -65,7 +64,7 @@ export default function CardsScreen() {
             accessibilityLabel="Abrir filtros"
             style={({ pressed }) => [
               styles.filterButton,
-              { backgroundColor: filterCount > 0 ? theme.text : theme.backgroundElement },
+              { backgroundColor: filterCount > 0 ? theme.gold : theme.backgroundElement },
               pressed && styles.pressed,
             ]}>
             <ThemedText type="smallBold" style={filterCount > 0 ? { color: theme.background } : undefined}>

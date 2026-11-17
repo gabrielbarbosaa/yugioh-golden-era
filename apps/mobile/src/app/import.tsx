@@ -75,7 +75,7 @@ export default function ImportScreen() {
               onPress={submit}
               disabled={busy}
               accessibilityRole="button"
-              style={({ pressed }) => [styles.button, { backgroundColor: theme.text }, (pressed || busy) && styles.dim]}>
+              style={({ pressed }) => [styles.button, { backgroundColor: theme.gold }, (pressed || busy) && styles.dim]}>
               {busy ? (
                 <ActivityIndicator color={theme.background} />
               ) : (

@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ArtBanner } from '@/components/art-banner';
 import { CARD_ASPECT } from '@/components/card-tile';
 import { QuantityStepper } from '@/components/quantity-stepper';
 import { StateMessage } from '@/components/state-message';
@@ -85,9 +86,7 @@ export default function CollectionScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <ThemedText type="subtitle" style={styles.title}>
-          Coleção
-        </ThemedText>
+        <ArtBanner cardId={38033121} title="Coleção" subtitle="Suas cartas e quantas cópias você tem" />
         {signedIn === null ? (
           <StateMessage loading />
         ) : signedIn ? (

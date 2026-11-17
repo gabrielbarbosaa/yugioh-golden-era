@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { DeckList } from "@/components/deck-list";
+import { PageBanner } from "@/components/page-banner";
 import { Pager, withQuery } from "@/components/pager";
 import { api, describeError } from "@/lib/api";
 
@@ -11,7 +12,9 @@ export const metadata = { title: "Decks" };
 export default function DecksPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <>
-      <h1>Decks da comunidade</h1>
+      <PageBanner title="Decks da comunidade" artCardId={89631139}>
+        Decks públicos montados por outros duelistas. Curta, comente e inspire o seu.
+      </PageBanner>
       <Suspense fallback={<p className="skeleton">Carregando decks…</p>}>
         <Results searchParams={searchParams} />
       </Suspense>

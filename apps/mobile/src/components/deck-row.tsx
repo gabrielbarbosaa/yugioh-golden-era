@@ -46,7 +46,7 @@ export function DeckRow({ deck, showVisibility }: { deck: DeckSummary; showVisib
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderRadius: Spacing.three, padding: Spacing.three },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderRadius: Spacing.three, padding: Spacing.three, borderWidth: 1, borderColor: '#3A3220' },
   info: { flex: 1, gap: Spacing.half },
   pressed: { opacity: 0.7 },
 });

@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { api, describeError } from "@/lib/api";
+import { LimitBadge } from "@/components/limit-badge";
+import { OwnedControl } from "@/components/owned-control";
+import { TiltCard } from "@/components/tilt-card";
 import { banlistLabel } from "@/lib/banlist";
 
 type Params = Promise<{ id: string }>;
@@ -49,21 +52,49 @@ async function CardDetail({ params }: { params: Params }) {
       <h1>{card.name}</h1>
       <div className="card-detail">
         <div className="card-art">
-          <Image src={card.imageUrl} alt={card.name} width={420} height={612} unoptimized priority />
+          <TiltCard max={10}>
+            <Image src={card.imageUrl} alt={card.name} width={420} height={612} unoptimized priority />
+          </TiltCard>
         </div>
         <div>
+          {banlistLabel(card.maxCopies) ? (
+            <p>
+              <span className="limit-pill">
+                <LimitBadge maxCopies={card.maxCopies} />
+                {banlistLabel(card.maxCopies)} na lista da era
+                {card.maxCopies === 0 ? "" : `: no máximo ${card.maxCopies} ${card.maxCopies === 1 ? "cópia" : "cópias"}`}
+              </span>
+            </p>
+          ) : null}
+          <Suspense fallback={null}>
+            <OwnedControl cardId={card.id} />
+          </Suspense>
+          {card.atk != null || card.def != null ? (
+            <div className="stat-plate">
+              <div>
+                <span>ATK</span>
+                <strong>{card.atk ?? "?"}</strong>
+              </div>
+              <div>
+                <span>DEF</span>
+                <strong>{card.def ?? "?"}</strong>
+              </div>
+              {card.level != null ? (
+                <div>
+                  <span>Nível</span>
+                  <strong>{card.level}</strong>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           <div className="facts">
             <Fact label="Tipo" value={card.type} />
             <Fact label="Atributo" value={card.attribute} />
             <Fact label="Espécie" value={card.race} />
-            <Fact label="Nível" value={card.level} />
-            <Fact label="ATK" value={card.atk} />
-            <Fact label="DEF" value={card.def} />
             <Fact label="Arquétipo" value={card.archetype} />
-            <Fact label="Lista da era" value={banlistLabel(card.maxCopies)} />
             <Fact label="Lançamento (OCG)" value={card.ocgDate} />
           </div>
-          <p style={{ whiteSpace: "pre-line" }}>{card.desc}</p>
+          <p className="card-text">{card.desc}</p>
         </div>
       </div>
     </>

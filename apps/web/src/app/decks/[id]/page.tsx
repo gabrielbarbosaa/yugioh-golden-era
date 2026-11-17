@@ -6,6 +6,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { setLike } from "@/app/actions";
+import { LimitBadge } from "@/components/limit-badge";
+import { PageBanner } from "@/components/page-banner";
 import { CommentForm } from "@/components/comment-form";
 import { api, describeError } from "@/lib/api";
 import { authHeaders } from "@/lib/session";
@@ -59,18 +61,60 @@ async function DeckDetail({ params }: { params: Params }) {
     params: { path: { deckId: id }, query: { limit: 50 } },
   });
 
+  const bannerCard = deck.coverCardId ?? 46986414; // sem capa (deck vazio): Dark Magician
+
   return (
     <>
-      <h1>{deck.name}</h1>
-      <p className="muted">
-        por{" "}
-        <Link href={`/users/${deck.owner.username}`}>
-          <strong>@{deck.owner.username}</strong>
-        </Link>
-        {deck.archetype ? ` · ${deck.archetype}` : ""} · ♥ {deck.likeCount} · 💬 {deck.commentCount}
-      </p>
-      {deck.description ? <p style={{ whiteSpace: "pre-line" }}>{deck.description}</p> : null}
+      <PageBanner title={deck.name} artCardId={bannerCard}>
+        <p>
+          por{" "}
+          <Link href={`/users/${deck.owner.username}`}>
+            <strong>@{deck.owner.username}</strong>
+          </Link>
+          {deck.archetype ? ` · ${deck.archetype}` : ""} · ♥ {deck.likeCount} · 💬 {deck.commentCount}
+          {deck.visibility === "private" ? <span className="visibility-tag draft">Privado</span> : null}
+        </p>
+        {deck.description ? <p>{deck.description}</p> : null}
+      </PageBanner>
 
+      <div className="deck-layout">
+        <div>
+          {ZONES.map(({ key, label }) => {
+            const entries: Entry[] = deck.cards[key];
+            const total = entries.reduce((sum, e) => sum + e.quantity, 0);
+            return (
+              <section key={key}>
+                <h2>
+                  {label} · {total}
+                </h2>
+                {entries.length === 0 ? (
+                  <p className="muted">Nenhuma carta.</p>
+                ) : (
+                  <ul className="card-grid">
+                    {entries.map((e) => {
+                      const card = cards.get(e.cardId);
+                      return (
+                        <li key={e.cardId}>
+                          <Link href={`/cards/${e.cardId}`}>
+                            <span className="thumb">
+                              {card ? (
+                                <Image src={card.imageSmallUrl} alt={card.name} width={118} height={172} unoptimized />
+                              ) : null}
+                              {card ? <LimitBadge maxCopies={card.maxCopies} /> : null}
+                            </span>
+                            <span className="qty">{e.quantity}×</span> {card?.name ?? `Carta ${e.cardId}`}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </section>
+            );
+          })}
+        </div>
+
+        <aside>
       {deck.visibility === "public" ? (
         signedIn ? (
           <form action={setLike.bind(null, id, !deck.likedByMe)} className="like-form">
@@ -86,37 +130,6 @@ async function DeckDetail({ params }: { params: Params }) {
       ) : (
         <p className="muted">Deck privado: só você vê esta página.</p>
       )}
-
-      {ZONES.map(({ key, label }) => {
-        const entries: Entry[] = deck.cards[key];
-        const total = entries.reduce((sum, e) => sum + e.quantity, 0);
-        return (
-          <section key={key}>
-            <h2>
-              {label} · {total}
-            </h2>
-            {entries.length === 0 ? (
-              <p className="muted">Nenhuma carta.</p>
-            ) : (
-              <ul className="card-grid">
-                {entries.map((e) => {
-                  const card = cards.get(e.cardId);
-                  return (
-                    <li key={e.cardId}>
-                      <Link href={`/cards/${e.cardId}`}>
-                        {card ? (
-                          <Image src={card.imageSmallUrl} alt={card.name} width={118} height={172} unoptimized />
-                        ) : null}
-                        <span className="qty">{e.quantity}×</span> {card?.name ?? `Carta ${e.cardId}`}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
-        );
-      })}
 
       <section>
         <h2>Comentários</h2>
@@ -135,6 +148,8 @@ async function DeckDetail({ params }: { params: Params }) {
         {deck.visibility === "public" && signedIn ? <CommentForm deckId={id} /> : null}
         <p className="muted">Para copiar este deck ou montar os seus, use o app Golden Era.</p>
       </section>
+        </aside>
+      </div>
     </>
   );
 }

@@ -2,9 +2,9 @@ import type { DeckSummary } from '@golden-era/api-client';
 import { FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ArtBanner } from '@/components/art-banner';
 import { DeckRow } from '@/components/deck-row';
 import { StateMessage } from '@/components/state-message';
-import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, TopTabInset } from '@/constants/theme';
 import { usePagedList } from '@/hooks/use-paged-list';
@@ -20,9 +20,7 @@ export default function DecksScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <ThemedText type="subtitle" style={styles.title}>
-          Decks
-        </ThemedText>
+        <ArtBanner cardId={89631139} title="Decks" subtitle="Decks públicos da comunidade" />
         <FlatList
           data={items}
           keyExtractor={(deck) => deck.id}

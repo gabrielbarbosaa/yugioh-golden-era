@@ -7,24 +7,35 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+/**
+ * Tema "Millennium": meia-noite, violeta e ouro. O app tem uma identidade só, então o esquema claro usa a mesma paleta.
+ * A paleta espelha apps/web/src/app/globals.css.
+ */
+const millennium = {
+  text: '#F3EEDD',
+  background: '#0A0919',
+  backgroundElement: '#15132E',
+  backgroundSelected: '#211E45',
+  textSecondary: '#A8A4C4',
+  gold: '#E6B422',
+  goldLight: '#F6DC8C',
+  goldDark: '#A87B0A',
+  border: '#3A3220',
+  danger: '#FF7A7A',
+  forbidden: '#E5484D',
+  limited: '#F08C2A',
+  semi: '#E8C53A',
+} as const;
+
 export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
+  light: millennium,
+  dark: millennium,
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+
+/** Fonte dos títulos (carregada em app/_layout.tsx com @expo-google-fonts/cinzel). */
+export const DisplayFont = { semibold: 'Cinzel_600SemiBold', bold: 'Cinzel_700Bold' } as const;
 
 export const Fonts = Platform.select({
   ios: {

@@ -2,7 +2,8 @@ import type { DeckSummary } from "@golden-era/api-client";
 import Image from "next/image";
 import Link from "next/link";
 
-export function DeckList({ decks }: { decks: DeckSummary[] }) {
+/** Lista de decks. Com `showVisibility` (decks do próprio jogador) marca rascunhos privados. */
+export function DeckList({ decks, showVisibility = false }: { decks: DeckSummary[]; showVisibility?: boolean }) {
   return (
     <ul className="deck-list">
       {decks.map((deck) => (
@@ -15,6 +16,11 @@ export function DeckList({ decks }: { decks: DeckSummary[] }) {
             )}
             <span>
               <strong>{deck.name}</strong>
+              {showVisibility ? (
+                <span className={`visibility-tag ${deck.visibility === "private" ? "draft" : ""}`}>
+                  {deck.visibility === "private" ? "Privado" : "Público"}
+                </span>
+              ) : null}
               <br />
               <span className="muted">
                 por @{deck.owner.username}

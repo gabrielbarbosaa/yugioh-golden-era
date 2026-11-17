@@ -1,24 +1,23 @@
-:root {
-  --bg: #ffffff;
-  --surface: #f0f0f3;
-  --surface-2: #e0e1e6;
-  --text: #111214;
-  --muted: #60646c;
-  --accent: #b8860b;
-  --danger: #d93025;
-  --radius: 12px;
-}
+/* Golden Era: tema "Millennium" (meia-noite, violeta e ouro). A paleta espelha apps/mobile/src/constants/theme.ts. */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --surface: #212225;
-    --surface-2: #2e3135;
-    --text: #ffffff;
-    --muted: #b0b4ba;
-    --accent: #e6b422;
-    --danger: #ff6b60;
-  }
+:root {
+  color-scheme: dark;
+  --bg: #0a0919;
+  --surface: #15132e;
+  --surface-2: #211e45;
+  --border: rgba(230, 180, 34, 0.22);
+  --border-strong: rgba(230, 180, 34, 0.6);
+  --text: #f3eedd;
+  --muted: #a8a4c4;
+  --gold: #e6b422;
+  --gold-light: #f6dc8c;
+  --gold-dark: #a87b0a;
+  --danger: #ff7a7a;
+  --forbidden: #e5484d;
+  --limited: #f08c2a;
+  --semi: #e8c53a;
+  --radius: 12px;
+  --font-display: "Cinzel", Georgia, "Times New Roman", serif;
 }
 
 * {
@@ -28,242 +27,133 @@
 html,
 body {
   margin: 0;
-  background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  line-height: 1.5;
+  line-height: 1.55;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -8%, #31216f 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, #0f2a5c 0%, transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
 }
 
 a {
-  color: inherit;
+  color: var(--gold-light);
+  text-decoration-color: rgba(246, 220, 140, 0.4);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: #fff;
+}
+
+h1,
+h2,
+.brand-text {
+  font-family: var(--font-display);
+  letter-spacing: 0.03em;
 }
 
 h1 {
-  font-size: 1.75rem;
-  margin: 1.5rem 0 1rem;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 1.75rem 0 1.25rem;
+  color: var(--gold-light);
+}
+
+h1::after {
+  content: "";
+  display: block;
+  width: 84px;
+  height: 2px;
+  margin-top: 0.6rem;
+  background: linear-gradient(90deg, var(--gold), transparent);
 }
 
 h2 {
-  font-size: 1.15rem;
-  margin: 1.75rem 0 0.75rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 2rem 0 0.9rem;
+  color: var(--gold-light);
 }
 
+/* Largura fluida: em telas grandes o conteúdo ocupa mais espaço, com margens proporcionais. */
 .container {
-  max-width: 960px;
+  width: 100%;
+  max-width: 1480px;
   margin: 0 auto;
-  padding: 0 1rem 3rem;
+  padding: 0 clamp(1rem, 3.5vw, 3rem) 3rem;
 }
+
+main.container {
+  flex: 1;
+}
+
+/* ---------- topo ---------- */
 
 .topbar {
-  background: var(--surface);
   position: sticky;
   top: 0;
   z-index: 10;
+  background: rgba(10, 9, 25, 0.82);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
 }
 
 .topbar-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
+  gap: 1rem;
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: var(--gold-light);
+}
+
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 0 8px rgba(230, 180, 34, 0.45));
+}
+
+.brand-text {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .topbar nav {
   display: flex;
-  gap: 1rem;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
 }
 
 .topbar nav a {
   text-decoration: none;
   color: var(--muted);
+  font-size: 0.95rem;
+  padding: 0.2rem 0;
+  border-bottom: 2px solid transparent;
 }
 
-.topbar nav a:hover,
-.brand {
-  color: var(--text);
-}
-
-.brand {
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.muted {
-  color: var(--muted);
-}
-
-.error {
-  color: var(--danger);
-}
-
-.search {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.search input,
-.search select {
-  flex: 1;
-  padding: 0.6rem 0.9rem;
-  border-radius: var(--radius);
-  border: 0;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 1rem;
-}
-
-.search select {
-  flex: 0 0 auto;
-}
-
-.button {
-  display: inline-block;
-  padding: 0.6rem 1rem;
-  border-radius: var(--radius);
-  border: 0;
-  background: var(--text);
-  color: var(--bg);
-  font-weight: 600;
-  font-size: 1rem;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.card-grid {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 0.75rem;
-}
-
-.card-grid a {
-  display: block;
-  text-decoration: none;
-  font-size: 0.8rem;
-}
-
-.card-grid img,
-.card-art img {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 59 / 86;
-  object-fit: cover;
-  border-radius: 4px;
-  background: var(--surface);
-}
-
-.qty {
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.deck-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 0.75rem;
-}
-
-.deck-row {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  padding: 0.75rem;
-  border-radius: var(--radius);
-  background: var(--surface);
-  text-decoration: none;
-}
-
-.deck-row img,
-.deck-row .no-cover {
-  width: 56px;
-  height: auto;
-  aspect-ratio: 59 / 86;
-  border-radius: 4px;
-  background: var(--surface-2);
-  flex: none;
-}
-
-.pager {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
-}
-
-.facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 1rem 0;
-}
-
-.fact {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 0.35rem 0.8rem;
-  font-size: 0.9rem;
-}
-
-.fact span {
-  color: var(--muted);
-  margin-right: 0.4rem;
-}
-
-.card-detail {
-  display: grid;
-  grid-template-columns: minmax(200px, 320px) 1fr;
-  gap: 1.5rem;
-  align-items: start;
-}
-
-.card-art {
-  max-width: 320px;
-}
-
-@media (max-width: 640px) {
-  .card-detail {
-    grid-template-columns: 1fr;
-  }
-}
-
-.stats {
-  display: flex;
-  gap: 0.75rem;
-  margin: 1rem 0;
-}
-
-.stat {
-  flex: 1;
-  text-align: center;
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 0.75rem;
-}
-
-.stat strong {
-  display: block;
-  font-size: 1.25rem;
-}
-
-.comment {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.comment p {
-  margin: 0.25rem 0 0;
-}
-
-.skeleton {
-  color: var(--muted);
-  padding: 2rem 0;
+.topbar nav a:hover {
+  color: var(--gold-light);
+  border-bottom-color: var(--gold);
 }
 
 .usermenu {
@@ -287,30 +177,62 @@ h2 {
 }
 
 .linkbutton:hover {
-  color: var(--text);
+  color: var(--gold-light);
 }
 
-.form {
-  display: grid;
-  gap: 1rem;
-  max-width: 420px;
+/* ---------- rodapé ---------- */
+
+.footer {
+  border-top: 1px solid var(--border);
+  background: rgba(10, 9, 25, 0.7);
 }
 
-.form label {
-  display: grid;
-  gap: 0.35rem;
-  font-size: 0.9rem;
+.footer-inner {
+  padding-top: 1.25rem;
+  padding-bottom: 1.5rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 
-.form input,
-.form textarea {
-  padding: 0.6rem 0.9rem;
+.footer-inner p {
+  margin: 0.25rem 0;
+}
+
+/* ---------- utilidades ---------- */
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.skeleton {
+  color: var(--muted);
+  padding: 2rem 0;
+}
+
+.button {
+  display: inline-block;
+  padding: 0.65rem 1.15rem;
   border-radius: var(--radius);
-  border: 0;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
+  border: 1px solid var(--gold-dark);
+  background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 55%, var(--gold-dark) 100%);
+  color: #1a1203;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 2px 14px rgba(230, 180, 34, 0.25);
+}
+
+.button:hover {
+  color: #1a1203;
+  filter: brightness(1.08);
+  box-shadow: 0 2px 20px rgba(230, 180, 34, 0.45);
 }
 
 .button[disabled] {
@@ -318,21 +240,51 @@ h2 {
   cursor: default;
 }
 
-.like-form {
-  margin: 0 0 1rem;
+.button.ghost {
+  background: transparent;
+  color: var(--gold-light);
+  border-color: var(--border-strong);
+  box-shadow: none;
 }
 
-.plain-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  columns: 2 280px;
-  column-gap: 1.5rem;
+.button.ghost:hover {
+  color: #fff;
+  background: rgba(230, 180, 34, 0.12);
 }
 
-.plain-list li {
-  padding: 0.2rem 0;
-  break-inside: avoid;
+/* ---------- busca e filtros ---------- */
+
+.search {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.search input,
+.search select,
+.form input,
+.form textarea {
+  flex: 1;
+  padding: 0.65rem 0.95rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.search input:focus,
+.search select:focus,
+.form input:focus,
+.form textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(230, 180, 34, 0.2);
+}
+
+.search select {
+  flex: 0 0 auto;
 }
 
 .search.filters {
@@ -353,9 +305,703 @@ h2 {
 .filter-row select {
   flex: 1 1 9rem;
   padding: 0.5rem 0.7rem;
-  border-radius: var(--radius);
-  border: 0;
-  background: var(--surface);
-  color: var(--text);
   font-size: 0.9rem;
+}
+
+/* ---------- hero ---------- */
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: center;
+  gap: 1.5rem;
+  margin: 1.5rem 0 2rem;
+  padding: 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 80% 30%, rgba(230, 180, 34, 0.16), transparent 55%),
+    linear-gradient(135deg, rgba(33, 30, 69, 0.85), rgba(21, 19, 46, 0.85));
+  overflow: hidden;
+}
+
+.hero h1 {
+  margin-top: 0;
+  font-size: 2.3rem;
+  line-height: 1.15;
+}
+
+.hero p {
+  margin: 0 0 1.25rem;
+  color: var(--muted);
+  max-width: 34rem;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* O leque de cartas da vitrine (.fan, .fan-card) está mais abaixo, na seção "3D, papéis de parede e layout largo". */
+
+@media (max-width: 760px) {
+  .hero {
+    grid-template-columns: 1fr;
+    padding: 1.25rem;
+  }
+
+  .hero h1 {
+    font-size: 1.7rem;
+  }
+}
+
+/* ---------- grade de cartas ---------- */
+
+.card-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  gap: 1rem 0.85rem;
+}
+
+.card-grid a {
+  position: relative;
+  display: block;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.card-grid .thumb {
+  position: relative;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.card-grid img,
+.card-art img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 59 / 86;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.card-grid img {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.card-grid a:hover img,
+.card-grid a:focus-visible img {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.7), 0 0 0 2px var(--gold), 0 0 24px rgba(230, 180, 34, 0.45);
+}
+
+.qty {
+  font-weight: 700;
+  color: var(--gold);
+}
+
+/* Selo de limite, como o do jogo: número de cópias permitidas (✕ = proibida). */
+.limit-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; /* o "1" do Cinzel parece um I */
+  font-weight: 800;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.limit-badge.forbidden { background: var(--forbidden); }
+.limit-badge.limited { background: var(--limited); }
+.limit-badge.semi { background: var(--semi); color: #2a2000; }
+
+.limit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.7rem 0.2rem 0.3rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 0.85rem;
+}
+
+.limit-pill .limit-badge {
+  position: static;
+  width: 22px;
+  height: 22px;
+  font-size: 0.78rem;
+}
+
+/* ---------- decks ---------- */
+
+.deck-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.deck-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--surface-2), var(--surface));
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.deck-row:hover {
+  border-color: var(--gold);
+  transform: translateX(3px);
+  color: var(--text);
+}
+
+.deck-row strong {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--gold-light);
+}
+
+.deck-row img,
+.deck-row .no-cover {
+  width: 56px;
+  height: auto;
+  aspect-ratio: 59 / 86;
+  border-radius: 4px;
+  background: var(--surface-2);
+  flex: none;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+}
+
+.pager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.75rem;
+}
+
+/* ---------- detalhe da carta ---------- */
+
+.card-detail {
+  display: grid;
+  grid-template-columns: minmax(220px, 330px) 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.card-art {
+  max-width: 330px;
+}
+
+.card-art img {
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--border-strong), 0 18px 48px rgba(0, 0, 0, 0.7), 0 0 60px rgba(230, 180, 34, 0.22);
+}
+
+@media (max-width: 680px) {
+  .card-detail {
+    grid-template-columns: 1fr;
+  }
+
+  .card-art {
+    margin: 0 auto;
+  }
+}
+
+.stat-plate {
+  display: flex;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.stat-plate > div {
+  flex: 1;
+  text-align: center;
+  padding: 0.7rem 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+}
+
+.stat-plate span {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.stat-plate strong {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  color: var(--gold-light);
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.fact {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.9rem;
+}
+
+.fact span {
+  color: var(--muted);
+  margin-right: 0.4rem;
+}
+
+.card-text {
+  margin: 1rem 0 0;
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  background: rgba(21, 19, 46, 0.7);
+  white-space: pre-line;
+}
+
+/* ---------- perfil e comentários ---------- */
+
+.stats {
+  display: flex;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.stat {
+  flex: 1;
+  text-align: center;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+}
+
+.stat strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--gold-light);
+}
+
+.comment {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.comment p {
+  margin: 0.25rem 0 0;
+}
+
+/* ---------- formulários ---------- */
+
+.form {
+  display: grid;
+  gap: 1rem;
+  max-width: 420px;
+}
+
+.form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.like-form {
+  margin: 0 0 1rem;
+}
+
+/* ---------- lista da era ---------- */
+
+.plain-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  columns: 2 280px;
+  column-gap: 1.5rem;
+}
+
+.plain-list li {
+  padding: 0.2rem 0;
+  break-inside: avoid;
+}
+
+.ban-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.ban-heading .limit-badge {
+  position: static;
+}
+
+@media (max-width: 560px) {
+  .topbar-inner {
+    flex-wrap: wrap;
+    row-gap: 0.4rem;
+  }
+
+  .brand-text {
+    font-size: 0.95rem;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  .topbar nav {
+    gap: 0.9rem;
+  }
+}
+
+/* ================= 3D, papéis de parede e layout largo ================= */
+
+/*
+ * Carta que inclina em 3D com o ponteiro (veja components/tilt-card.tsx). O alvo do mouse é a camada de fora
+ * (.tilt-hit), que não se transforma; a de dentro (.tilt) gira e ignora o mouse. Se o próprio elemento que gira
+ * fosse o alvo, a inclinação moveria a carta sob o ponteiro e a posição lida mudaria a cada frame (tremedeira).
+ */
+.tilt-hit {
+  position: relative;
+  border-radius: 8px;
+}
+
+.tilt-hit .tilt,
+.tilt-hit .tilt * {
+  pointer-events: none;
+}
+
+.tilt {
+  position: relative;
+  border-radius: 8px;
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 0.45s ease;
+  will-change: transform;
+}
+
+.tilt[data-active="1"] {
+  transition: transform 0.08s linear;
+}
+
+.tilt-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 55%);
+  mix-blend-mode: soft-light;
+  transition: opacity 0.2s ease;
+}
+
+.tilt[data-active="1"] .tilt-glare {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt {
+    transform: none !important;
+    transition: none;
+  }
+
+  .tilt-glare {
+    display: none;
+  }
+}
+
+/* Papel de parede: a arte de uma carta, ampliada para mostrar só o quadro central, fundida com o fundo. */
+.art-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  -webkit-mask-image: linear-gradient(to left, #000 0%, #000 30%, transparent 85%);
+  mask-image: linear-gradient(to left, #000 0%, #000 30%, transparent 85%);
+  opacity: 0.55;
+}
+
+.art-backdrop.left {
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 30%, transparent 85%);
+  mask-image: linear-gradient(to right, #000 0%, #000 30%, transparent 85%);
+}
+
+.art-backdrop img {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 135%;
+  max-width: none;
+  height: auto;
+  transform: translate(-50%, -24%);
+  filter: saturate(1.15) contrast(1.05);
+}
+
+/* Cabeçalho de página com papel de parede. */
+.banner {
+  position: relative;
+  margin: 1.5rem 0 2rem;
+  padding: 2.2rem clamp(1.25rem, 3vw, 2.5rem);
+  min-height: 150px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(33, 30, 69, 0.9), rgba(21, 19, 46, 0.9));
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.banner-text {
+  position: relative;
+  z-index: 1;
+  max-width: 44rem;
+}
+
+.banner h1 {
+  margin: 0;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.8);
+}
+
+.banner-sub {
+  margin-top: 0.6rem;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.9);
+}
+
+.banner-sub p {
+  margin: 0.4rem 0 0;
+}
+
+/* Hero com papel de parede e cartas em 3D. */
+.hero {
+  position: relative;
+  grid-template-columns: 1fr 1.15fr;
+  min-height: 420px;
+  padding: clamp(1.5rem, 3vw, 2.75rem);
+}
+
+.hero > div:not(.art-backdrop) {
+  position: relative;
+  z-index: 1;
+}
+
+.hero .art-backdrop {
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.fan {
+  height: 380px;
+  perspective: 1200px;
+  margin-left: clamp(0px, 4vw, 80px);
+}
+
+/*
+ * Cada carta do leque tem duas camadas: .fan-card fica parada (posição e giro fixos) e recebe o mouse; o efeito de
+ * hover vai na camada de dentro (.fan-card-inner). Assim a área sensível nunca se mexe sob o ponteiro, o que causava
+ * tremedeira e o hover "piscando".
+ */
+.fan-card {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 190px;
+  transform-origin: 50% 110%;
+}
+
+.fan-card-inner {
+  transform-origin: 50% 100%;
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.fan-card:hover {
+  z-index: 5;
+}
+
+.fan-card:hover .fan-card-inner {
+  transform: translateY(-18px) scale(1.07);
+  filter: drop-shadow(0 0 18px rgba(230, 180, 34, 0.5));
+}
+
+.fan-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.65);
+}
+
+.fan-card:nth-child(1) { transform: translateX(-50%) translateX(-150px) rotate(-17deg); }
+.fan-card:nth-child(2) { transform: translateX(-50%) translateX(-76px) rotate(-8.5deg); }
+.fan-card:nth-child(3) { transform: translateX(-50%) rotate(0deg); z-index: 2; }
+.fan-card:nth-child(4) { transform: translateX(-50%) translateX(76px) rotate(8.5deg); }
+.fan-card:nth-child(5) { transform: translateX(-50%) translateX(150px) rotate(17deg); }
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .fan {
+    height: 280px;
+  }
+
+  .fan-card {
+    width: 128px;
+  }
+
+  .fan-card:nth-child(1) { transform: translateX(-50%) translateX(-112px) rotate(-17deg); }
+  .fan-card:nth-child(2) { transform: translateX(-50%) translateX(-56px) rotate(-8.5deg); }
+  .fan-card:nth-child(4) { transform: translateX(-50%) translateX(56px) rotate(8.5deg); }
+  .fan-card:nth-child(5) { transform: translateX(-50%) translateX(112px) rotate(17deg); }
+}
+
+/* Grades maiores em telas largas. */
+.card-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1.25rem 1rem;
+}
+
+.deck-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+}
+
+.card-detail {
+  grid-template-columns: minmax(240px, 400px) 1fr;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.card-art {
+  max-width: 400px;
+}
+
+.card-art .tilt {
+  border-radius: 10px;
+}
+
+@media (max-width: 680px) {
+  .card-detail {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Duas colunas no deck público: lista de cartas e painel lateral (comentários). */
+.deck-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  align-items: start;
+}
+
+.deck-layout > aside {
+  position: sticky;
+  top: 5rem;
+}
+
+@media (max-width: 1000px) {
+  .deck-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .deck-layout > aside {
+    position: static;
+  }
+}
+
+/* Coleção */
+.owned-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.owned-row .qty-box {
+  min-width: 2rem;
+  text-align: center;
+  font-weight: 700;
+  color: var(--gold-light);
+}
+
+.step-button {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--gold-light);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.step-button:hover:not([disabled]) {
+  background: rgba(230, 180, 34, 0.18);
+}
+
+.step-button[disabled] {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.owned-box {
+  margin: 1rem 0;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(21, 19, 46, 0.7);
+}
+
+.owned-box .owned-row {
+  justify-content: flex-start;
+}
+
+.visibility-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.visibility-tag.draft {
+  border-color: var(--limited);
+  color: var(--limited);
 }

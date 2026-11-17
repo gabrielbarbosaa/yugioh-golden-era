@@ -8,7 +8,7 @@ import {
 } from 'expo-router/ui';
 import { Pressable, type PressableProps, View, StyleSheet } from 'react-native';
 
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { DisplayFont, MaxContentWidth, Spacing } from '@/constants/theme';
 
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
@@ -24,6 +24,9 @@ export default function AppTabs() {
           </TabTrigger>
           <TabTrigger name="decks" href="/decks" asChild>
             <TabButton>Decks</TabButton>
+          </TabTrigger>
+          <TabTrigger name="banlist" href="/banlist" asChild>
+            <TabButton>Lista da era</TabButton>
           </TabTrigger>
           <TabTrigger name="collection" href="/collection" asChild>
             <TabButton>Coleção</TabButton>
@@ -43,8 +46,8 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
     <Pressable {...(props as unknown as PressableProps)} style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView
         type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
+        style={[styles.tabButtonView, isFocused && styles.tabButtonFocused]}>
+        <ThemedText type="smallBold" themeColor={isFocused ? 'goldLight' : 'textSecondary'}>
           {children}
         </ThemedText>
       </ThemedView>
@@ -56,8 +59,8 @@ export function CustomTabList(props: TabListProps) {
   return (
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Golden Era
+        <ThemedText type="smallBold" themeColor="goldLight" style={styles.brandText}>
+          GOLDEN ERA
         </ThemedText>
 
         {props.children}
@@ -79,6 +82,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.five,
     borderRadius: Spacing.five,
+    borderWidth: 1,
+    borderColor: '#3A3220',
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: 1,
@@ -87,6 +92,9 @@ const styles = StyleSheet.create({
   },
   brandText: {
     marginRight: 'auto',
+    fontFamily: DisplayFont.bold,
+    fontSize: 16,
+    letterSpacing: 3,
   },
   pressed: {
     opacity: 0.7,
@@ -95,5 +103,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  tabButtonFocused: {
+    borderColor: '#A87B0A',
   },
 });

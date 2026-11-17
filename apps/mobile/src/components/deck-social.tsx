@@ -150,7 +150,7 @@ export function DeckSocial({
             accessibilityRole="button"
             style={({ pressed }) => [
               styles.send,
-              { backgroundColor: theme.text },
+              { backgroundColor: theme.gold },
               (pressed || sending || !body.trim()) && styles.dim,
             ]}>
             {sending ? (

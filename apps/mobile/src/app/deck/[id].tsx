@@ -342,7 +342,7 @@ function Editor({
             onPress={copyToMine}
             disabled={saving}
             accessibilityRole="button"
-            style={({ pressed }) => [styles.save, { backgroundColor: theme.text }, (pressed || saving) && styles.dim]}>
+            style={({ pressed }) => [styles.save, { backgroundColor: theme.gold }, (pressed || saving) && styles.dim]}>
             {saving ? (
               <ActivityIndicator color={theme.background} />
             ) : (
@@ -379,7 +379,7 @@ function Editor({
             onPress={save}
             disabled={saving}
             accessibilityRole="button"
-            style={({ pressed }) => [styles.save, { backgroundColor: theme.text }, (pressed || saving) && styles.dim]}>
+            style={({ pressed }) => [styles.save, { backgroundColor: theme.gold }, (pressed || saving) && styles.dim]}>
             {saving ? (
               <ActivityIndicator color={theme.background} />
             ) : (

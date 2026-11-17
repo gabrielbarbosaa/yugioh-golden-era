@@ -125,3 +125,27 @@ export async function addComment(deckId: string, _prev: FormState, data: FormDat
   revalidatePath(`/decks/${deckId}`);
   return { error: null };
 }
+
+/**
+ * Ajusta quantas cópias de uma carta o jogador tem. A API só sabe substituir a coleção inteira, então lemos a
+ * coleção atual, trocamos a quantidade desta carta e gravamos de volta (a última edição vence, como no app).
+ */
+export async function setOwned(cardId: number, quantity: number) {
+  const headers = await authHeaders();
+  if (!headers) redirect(`/login?next=${encodeURIComponent("/collection")}`);
+
+  const q = Math.max(0, Math.min(999, Math.round(quantity)));
+  const current = await api.GET("/me/collection", { headers });
+  if (current.response.status === 401) redirect(`/login?next=${encodeURIComponent("/collection")}`);
+  if (!current.data) return;
+
+  const items = new Map(current.data.map((i) => [i.cardId, i.quantity]));
+  if (q === 0) items.delete(cardId);
+  else items.set(cardId, q);
+  await api.PUT("/me/collection", {
+    body: [...items].map(([id, n]) => ({ cardId: id, quantity: n })),
+    headers,
+  });
+  revalidatePath("/collection");
+  revalidatePath(`/cards/${cardId}`);
+}

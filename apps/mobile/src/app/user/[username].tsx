@@ -71,7 +71,7 @@ function Header({ profile, isMe }: { profile: Profile; isMe: boolean }) {
           accessibilityState={{ selected: follow.following }}
           style={({ pressed }) => [
             styles.follow,
-            { backgroundColor: follow.following ? theme.backgroundSelected : theme.text },
+            { backgroundColor: follow.following ? theme.backgroundSelected : theme.gold },
             pressed && styles.dim,
           ]}>
           <ThemedText type="smallBold" style={follow.following ? undefined : { color: theme.background }}>

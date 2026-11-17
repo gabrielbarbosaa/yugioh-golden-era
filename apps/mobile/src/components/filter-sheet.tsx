@@ -30,7 +30,7 @@ function Chip({ label, selected, onPress }: { label: string; selected: boolean; 
       accessibilityState={{ selected }}
       style={({ pressed }) => [
         styles.chip,
-        { backgroundColor: selected ? theme.text : theme.backgroundElement },
+        { backgroundColor: selected ? theme.gold : theme.backgroundElement },
         pressed && styles.dim,
       ]}>
       <ThemedText type="small" style={selected ? { color: theme.background } : undefined}>
@@ -117,7 +117,7 @@ export function FilterSheet({
             <Pressable
               onPress={() => onApply(draft)}
               accessibilityRole="button"
-              style={({ pressed }) => [styles.apply, { backgroundColor: theme.text }, pressed && styles.dim]}>
+              style={({ pressed }) => [styles.apply, { backgroundColor: theme.gold }, pressed && styles.dim]}>
               <ApplyLabel count={activeFilterCount(draft)} />
             </Pressable>
           </ThemedView>

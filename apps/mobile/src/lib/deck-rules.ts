@@ -27,7 +27,7 @@ export const homeZone = (card: Card): Zone => (isExtraCard(card) ? 'extra' : 'ma
 export const maxCopiesOf = (card: Card) => Math.min(MAX_COPIES, card.maxCopies);
 
 /** "Proibida", "Limitada" ou "Semilimitada"; `null` se a carta não tem restrição. */
-export function banlistLabel(card: Card): string | null {
+export function banlistLabel(card: Pick<Card, 'maxCopies'>): string | null {
   switch (card.maxCopies) {
     case 0:
       return 'Proibida';
