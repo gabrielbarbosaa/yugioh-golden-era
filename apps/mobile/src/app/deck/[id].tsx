@@ -15,10 +15,12 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useCards } from '@/hooks/use-cards';
 import { useTheme } from '@/hooks/use-theme';
 import { api } from '@/lib/api';
+import { useCollection } from '@/lib/collection';
 import {
   addCard,
   allCardIds,
   canAdd,
+  copiesOf,
   emptyCards,
   LIMITS,
   MIN_MAIN_PUBLIC,
@@ -43,15 +45,22 @@ function CardRow({
   cardId,
   quantity,
   card,
+  owned,
+  needed,
   onAdd,
   onRemove,
 }: {
   cardId: number;
   quantity: number;
   card?: Card;
+  /** Cópias na coleção do jogador; `undefined` sem sessão ou enquanto a coleção carrega. */
+  owned?: number;
+  /** Total de cópias da carta no deck (somando as zonas), para comparar com `owned`. */
+  needed: number;
   onAdd?: () => void;
   onRemove?: () => void;
 }) {
+  const short = owned !== undefined && needed > owned;
   return (
     <ThemedView type="backgroundElement" style={styles.row}>
       {card ? (
@@ -71,11 +80,15 @@ function CardRow({
         <ThemedText type="smallBold" numberOfLines={1}>
           {card?.name ?? `Carta ${cardId}`}
         </ThemedText>
-        {card ? (
-          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-            {card.type}
-          </ThemedText>
-        ) : null}
+        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+          {card?.type ?? ''}
+          {owned !== undefined ? (
+            <ThemedText type="small" style={short ? styles.error : undefined} themeColor={short ? undefined : 'textSecondary'}>
+              {card ? ' · ' : ''}
+              {short ? `faltam ${needed - owned} (tenho ${owned})` : `tenho ${owned}`}
+            </ThemedText>
+          ) : null}
+        </ThemedText>
       </Pressable>
       {onRemove ? <StepButton label="−" a11y="Remover uma cópia" onPress={onRemove} /> : null}
       <ThemedText type="smallBold" style={styles.qty}>
@@ -123,6 +136,11 @@ function Editor({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
+  const collection = useCollection();
+  const owned = collection.status === 'ready' ? collection.quantities : null;
+  const missing = owned
+    ? allCardIds(draft.cards).reduce((sum, id) => sum + Math.max(0, copiesOf(draft.cards, id) - (owned[id] ?? 0)), 0)
+    : 0;
   const fetched = useCards(allCardIds(draft.cards));
   const cardOf = (id: number): Card | undefined => known[id] ?? fetched[id];
   const edit = (patch: Partial<Draft>) => {
@@ -251,6 +269,14 @@ function Editor({
         </ThemedView>
       )}
 
+      {owned && allCardIds(draft.cards).length > 0 ? (
+        <ThemedText type="small" style={missing > 0 ? styles.error : styles.ok}>
+          {missing > 0
+            ? `Faltam ${missing} ${missing === 1 ? 'cópia' : 'cópias'} na sua coleção para montar este deck.`
+            : 'Você tem todas as cartas deste deck.'}
+        </ThemedText>
+      ) : null}
+
       {ZONES.map((zone: Zone) => (
         <ThemedView key={zone} style={styles.section}>
           <ThemedText type="smallBold">
@@ -267,6 +293,8 @@ function Editor({
                 cardId={e.cardId}
                 quantity={e.quantity}
                 card={cardOf(e.cardId)}
+                owned={owned ? (owned[e.cardId] ?? 0) : undefined}
+                needed={copiesOf(draft.cards, e.cardId)}
                 onRemove={readOnly ? undefined : () => edit({ cards: removeCard(draft.cards, zone, e.cardId) })}
                 onAdd={
                   readOnly || !cardOf(e.cardId)

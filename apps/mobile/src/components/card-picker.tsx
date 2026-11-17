@@ -12,6 +12,7 @@ import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { usePagedList } from '@/hooks/use-paged-list';
 import { useTheme } from '@/hooks/use-theme';
 import { api } from '@/lib/api';
+import { useCollection } from '@/lib/collection';
 import { canAdd, copiesOf, homeZone, type DeckCards, type Zone } from '@/lib/deck-rules';
 
 const THUMB = 48;
@@ -46,6 +47,8 @@ export function CardPicker({
   onClose: () => void;
 }) {
   const theme = useTheme();
+  const collection = useCollection();
+  const owned = collection.status === 'ready' ? collection.quantities : null;
   const [query, setQuery] = useState('');
   const q = useDebouncedValue(query.trim());
   const { items, loading, error, loadMore, reload } = usePagedList<Card>(
@@ -96,6 +99,7 @@ export function CardPicker({
                 <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
                   {item.type}
                   {copies > 0 ? ` · ${copies}/3 no deck` : ''}
+                  {owned ? ` · tenho ${owned[item.id] ?? 0}` : ''}
                 </ThemedText>
               </ThemedView>
               <AddButton
