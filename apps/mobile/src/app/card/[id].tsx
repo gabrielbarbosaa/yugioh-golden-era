@@ -2,15 +2,18 @@ import type { Card } from '@golden-era/api-client';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 
 import { CARD_ASPECT } from '@/components/card-tile';
+import { QuantityStepper } from '@/components/quantity-stepper';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { api } from '@/lib/api';
+import { useCollection } from '@/lib/collection';
 import { describeError } from '@/lib/errors';
+import { useSession } from '@/lib/session';
 
 function Fact({ label, value }: { label: string; value?: string | number | null }) {
   if (value === undefined || value === null || value === '') return null;
@@ -20,6 +23,34 @@ function Fact({ label, value }: { label: string; value?: string | number | null 
         {label}
       </ThemedText>
       <ThemedText type="smallBold">{String(value)}</ThemedText>
+    </ThemedView>
+  );
+}
+
+/** Quantas cópias o jogador tem (coleção pessoal); só com sessão aberta. */
+function Owned({ cardId }: { cardId: number }) {
+  const { signedIn } = useSession();
+  const collection = useCollection();
+  if (!signedIn) {
+    return (
+      <ThemedText type="small" themeColor="textSecondary">
+        Entre na sua conta (aba Perfil) para registrar quantas cópias você tem.
+      </ThemedText>
+    );
+  }
+  if (collection.status === 'loading') return <ActivityIndicator />;
+  if (collection.status === 'error') return <StateMessage message={collection.error ?? undefined} onRetry={collection.retry} />;
+  return (
+    <ThemedView style={styles.owned}>
+      <ThemedText type="smallBold">Na minha coleção</ThemedText>
+      <QuantityStepper value={collection.quantities[cardId] ?? 0} onChange={(q) => collection.setQuantity(cardId, q)} />
+      {collection.error ? (
+        <StateMessage message={collection.error} onRetry={collection.retry} />
+      ) : (
+        <ThemedText type="small" themeColor="textSecondary">
+          {collection.saving ? 'Salvando…' : 'Salvo'}
+        </ThemedText>
+      )}
     </ThemedView>
   );
 }
@@ -69,6 +100,7 @@ export default function CardDetailScreen() {
           <ThemedText type="subtitle" style={styles.name}>
             {card.name}
           </ThemedText>
+          <Owned cardId={card.id} />
           <ThemedView style={styles.facts}>
             <Fact label="Tipo" value={card.type} />
             <Fact label="Atributo" value={card.attribute} />
@@ -101,4 +133,5 @@ const styles = StyleSheet.create({
   facts: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, justifyContent: 'center' },
   fact: { borderRadius: Spacing.three, paddingVertical: Spacing.one + 2, paddingHorizontal: Spacing.three },
   desc: { alignSelf: 'stretch' },
+  owned: { alignItems: 'center', gap: Spacing.two },
 });
