@@ -1,7 +1,9 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -58,7 +60,7 @@ func TestSpecIsServed(t *testing.T) {
 		t.Fatalf("status = %d, esperado 200", res.StatusCode)
 	}
 	if !strings.Contains(string(b), "openapi: 3.0.3") {
-		t.Error("spec OpenAPI nÃƒÂ£o encontrada na resposta")
+		t.Error("spec OpenAPI nÃƒÆ’Ã‚Â£o encontrada na resposta")
 	}
 }
 
@@ -76,7 +78,7 @@ func TestDocsPage(t *testing.T) {
 		t.Fatalf("status = %d, esperado 200", res.StatusCode)
 	}
 	if !strings.Contains(string(b), "SwaggerUIBundle") {
-		t.Error("pÃƒÂ¡gina do Swagger UI nÃƒÂ£o encontrada")
+		t.Error("pÃƒÆ’Ã‚Â¡gina do Swagger UI nÃƒÆ’Ã‚Â£o encontrada")
 	}
 }
 
@@ -143,20 +145,35 @@ func TestImagesAreServedWithoutDirectoryListing(t *testing.T) {
 	}
 }
 
-func TestUnimplementedOperationReturns501(t *testing.T) {
-	srv := newTestServer(t)
-
-	res, err := http.Get(srv.URL + "/v1/me/collection")
-	if err != nil {
-		t.Fatal(err)
+// Todas as operaÃ§Ãµes do contrato jÃ¡ tÃªm handler, entÃ£o o 501 Ã© testado direto no middleware:
+// ele protege operaÃ§Ãµes que surgirem no contrato antes de ganharem implementaÃ§Ã£o.
+func TestNotImplementedMiddleware(t *testing.T) {
+	called := false
+	next := func(context.Context, http.ResponseWriter, *http.Request, any) (any, error) {
+		called = true
+		return nil, nil
 	}
-	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusNotImplemented {
-		t.Fatalf("status = %d, esperado 501", res.StatusCode)
+	if _, err := notImplemented(next, "GetCard")(context.Background(), nil, nil, nil); err != nil || !called {
+		t.Fatalf("operaÃ§Ã£o implementada deveria seguir adiante (err=%v, called=%v)", err, called)
 	}
-	if ct := res.Header.Get("Content-Type"); ct != "application/problem+json" {
-		t.Errorf("Content-Type = %q", ct)
+	called = false
+	if _, err := notImplemented(next, "OperacaoNova")(context.Background(), nil, nil, nil); !errors.Is(err, errNotImplemented) || called {
+		t.Fatalf("operaÃ§Ã£o sem handler deveria dar errNotImplemented sem chamar o handler (err=%v, called=%v)", err, called)
+	}
+}
+
+// Toda operaÃ§Ã£o do contrato precisa constar em implemented (senÃ£o responderia 501 sem querer).
+func TestAllContractOperationsAreImplemented(t *testing.T) {
+	for _, op := range []string{
+		"GetHealth", "Register", "Login", "RefreshToken", "Logout", "ListCards", "GetCard", "ListArchetypes", "ListSets",
+		"ListDecks", "CreateDeck", "ImportDeck", "GetDeck", "UpdateDeck", "DeleteDeck", "CopyDeck", "ExportDeck",
+		"LikeDeck", "UnlikeDeck", "ListDeckComments", "CreateDeckComment", "GetMe", "UpdateMe", "ListMyDecks",
+		"GetMyCollection", "ReplaceMyCollection", "GetUser", "ListUserDecks", "FollowUser", "UnfollowUser",
+	} {
+		if !implemented[op] {
+			t.Errorf("%s nÃ£o estÃ¡ em implemented", op)
+		}
 	}
 }
 

@@ -23,6 +23,7 @@ type Deps struct {
 	Users        UserStore
 	Decks        DeckStore
 	Social       SocialStore
+	Collection   CollectionStore
 	Tokens       *auth.Tokens
 	ImagesDir    string    // pasta servida em /images/ (vazio desliga a rota)
 	ImageBaseURL string    // prefixo das URLs de imagem devolvidas nas cartas
@@ -39,6 +40,7 @@ type apiServer struct {
 	users        UserStore
 	decks        DeckStore
 	social       SocialStore
+	collection   CollectionStore
 	tokens       *auth.Tokens
 	imageBaseURL string
 	eraEnd       time.Time
@@ -75,6 +77,9 @@ var implemented = map[string]bool{
 	"FollowUser":        true,
 	"UnfollowUser":      true,
 	"GetUser":           true,
+
+	"GetMyCollection":     true,
+	"ReplaceMyCollection": true,
 }
 
 func (a *apiServer) GetHealth(context.Context, gen.GetHealthRequestObject) (gen.GetHealthResponseObject, error) {
@@ -101,6 +106,7 @@ func NewHandler(log *slog.Logger, version string, deps Deps) http.Handler {
 		users:        deps.Users,
 		decks:        deps.Decks,
 		social:       deps.Social,
+		collection:   deps.Collection,
 		tokens:       deps.Tokens,
 		imageBaseURL: deps.ImageBaseURL,
 		eraEnd:       deps.EraEnd,

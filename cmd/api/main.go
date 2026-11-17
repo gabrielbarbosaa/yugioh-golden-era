@@ -61,6 +61,7 @@ func run() error {
 			Users:        store.NewUsers(pool),
 			Decks:        store.NewDecks(pool),
 			Social:       store.NewSocial(pool),
+			Collection:   store.NewCollection(pool),
 			Tokens:       auth.NewTokens(cfg.JWTSecret, cfg.AccessTTL, cfg.RefreshTTL),
 			ImagesDir:    cfg.ImagesDir,
 			ImageBaseURL: cfg.ImageBaseURL,
