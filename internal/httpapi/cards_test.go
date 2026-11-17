@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -30,6 +32,9 @@ func (f *fakeCards) List(_ context.Context, flt store.CardFilter, after *store.C
 	f.lastFilter, f.lastAfter, f.lastLimit = flt, after, limit
 	var rest []store.Card
 	for _, c := range fakeCatalog {
+		if len(flt.IDs) > 0 && !slices.Contains(flt.IDs, c.ID) {
+			continue
+		}
 		if after == nil || c.Name > after.Name {
 			rest = append(rest, c)
 		}
@@ -111,6 +116,25 @@ func TestListCardsPaginatesWithCursor(t *testing.T) {
 	if len(p2.Items) != 1 || p2.Items[0].Id != 3 || p2.NextCursor != nil {
 		t.Fatalf("página 2 inesperada: %+v", p2)
 	}
+}
+
+func TestListCardsFiltersByIDs(t *testing.T) {
+	srv := newTestServer(t)
+
+	var p gen.CardPage
+	getJSON(t, srv.URL+"/v1/cards?ids=3,1,999", http.StatusOK, &p)
+	if len(p.Items) != 2 || p.Items[0].Id != 1 || p.Items[1].Id != 3 {
+		t.Fatalf("esperava as cartas 1 e 3 (999 não existe): %+v", p.Items)
+	}
+
+	getJSON(t, srv.URL+"/v1/cards?ids=", http.StatusBadRequest, nil) // vazio nunca vira "todas as cartas"
+
+	many := make([]string, 101)
+	for i := range many {
+		many[i] = strconv.Itoa(i + 1)
+	}
+	getJSON(t, srv.URL+"/v1/cards?ids="+strings.Join(many, ","), http.StatusBadRequest, nil)
+	getJSON(t, srv.URL+"/v1/cards?ids=abc", http.StatusBadRequest, nil)
 }
 
 func TestListCardsRejectsBadInput(t *testing.T) {

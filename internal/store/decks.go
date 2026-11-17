@@ -25,17 +25,19 @@ type DeckOwner struct {
 
 // DeckSummary é o deck sem a lista de cartas.
 type DeckSummary struct {
-	ID           string
-	Name         string
-	Archetype    *string
-	Visibility   string
-	CoverCardID  *int64
-	LikeCount    int
-	CommentCount int
-	LikedByMe    bool
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	Owner        DeckOwner
+	ID          string
+	Name        string
+	Archetype   *string
+	Visibility  string
+	CoverCardID *int64
+	// CoverImagePath é o caminho relativo da imagem pequena da capa (nulo sem capa).
+	CoverImagePath *string
+	LikeCount      int
+	CommentCount   int
+	LikedByMe      bool
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Owner          DeckOwner
 }
 
 // Deck é o deck completo. Infos traz os dados das cartas para calcular estatísticas.
@@ -93,13 +95,15 @@ func NewDecks(pool *pgxpool.Pool) *Decks { return &Decks{pool: pool} }
 const summarySelect = `
 SELECT d.id::text, d.name, d.archetype, d.visibility, d.cover_card_id, d.like_count, d.comment_count,
        d.created_at, d.updated_at, u.id::text, u.username::text, u.avatar_url,
-       COALESCE(EXISTS (SELECT 1 FROM deck_likes l WHERE l.deck_id = d.id AND l.user_id = $1::uuid), false)
-FROM decks d JOIN users u ON u.id = d.owner_id`
+       COALESCE(EXISTS (SELECT 1 FROM deck_likes l WHERE l.deck_id = d.id AND l.user_id = $1::uuid), false),
+       cv.image_small_path
+FROM decks d JOIN users u ON u.id = d.owner_id
+LEFT JOIN cards cv ON cv.id = d.cover_card_id`
 
 func scanSummary(row pgx.Row) (DeckSummary, error) {
 	var s DeckSummary
 	err := row.Scan(&s.ID, &s.Name, &s.Archetype, &s.Visibility, &s.CoverCardID, &s.LikeCount, &s.CommentCount,
-		&s.CreatedAt, &s.UpdatedAt, &s.Owner.ID, &s.Owner.Username, &s.Owner.AvatarURL, &s.LikedByMe)
+		&s.CreatedAt, &s.UpdatedAt, &s.Owner.ID, &s.Owner.Username, &s.Owner.AvatarURL, &s.LikedByMe, &s.CoverImagePath)
 	return s, err
 }
 

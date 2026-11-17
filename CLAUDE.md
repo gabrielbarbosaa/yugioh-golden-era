@@ -50,7 +50,7 @@ cd apps/mobile && npx eslint src         # React Compiler lint rules are on: no 
 - The app reads `EXPO_PUBLIC_API_URL` (default `localhost`, `10.0.2.2` on the Android emulator). On a physical phone use the machine's LAN IP **and** start the API with `IMAGE_BASE_URL=http://<ip>:8080/images`, since card image URLs come from the API.
 - The API has CORS (`CORS_ORIGINS`, default Expo web + Next dev ports) because browsers call it directly; native apps don't need it.
 - Expo changes every SDK: follow `apps/mobile/AGENTS.md` (use `npx expo install`, check the versioned docs before touching Expo APIs).
-- Known contract gaps: `DeckSummary` only has `coverCardId`, not an image URL, so deck lists can't show cover art yet; and `Deck.cards` only has `{cardId, quantity}` with no batch card lookup, so the app fetches each card with `GET /cards/{id}` (deduplicated in `hooks/use-cards.ts`). A `ids` filter on `/cards` would fix both.
+- `Deck.cards` only has `{cardId, quantity}`, so the app loads card details in batches with `GET /cards?ids=1,2,3` (max 100, comma-separated — the api-client serializes arrays that way; cached in `hooks/use-cards.ts`). `DeckSummary.coverImageUrl` comes from a `LEFT JOIN cards` in the deck summary query (`store/decks.go`).
 - Mobile session: `lib/token-store.ts` (SecureStore on native, localStorage on web) feeds the api-client; `lib/session.tsx` exposes `useSession()`. The Perfil tab shows the login/register form or the profile + "Meus decks". The deck editor lives at `app/deck/[id].tsx` (`new` creates); client-side rules in `lib/deck-rules.ts` mirror `internal/deck` (the server stays the authority and its 422 messages are shown).
 
 ## Architecture

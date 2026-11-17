@@ -117,19 +117,29 @@ func (a *apiServer) prepareDeck(ctx context.Context, in gen.DeckInput) (store.De
 
 // ---- conversão para o contrato ----------------------------------------------
 
-func toAPISummary(s store.DeckSummary) gen.DeckSummary {
+// coverURL monta a URL da imagem da capa; nulo quando o deck não tem capa.
+func (a *apiServer) coverURL(s store.DeckSummary) *string {
+	if s.CoverImagePath == nil {
+		return nil
+	}
+	u := a.imageBaseURL + "/" + *s.CoverImagePath
+	return &u
+}
+
+func (a *apiServer) toAPISummary(s store.DeckSummary) gen.DeckSummary {
 	liked := s.LikedByMe
 	return gen.DeckSummary{
-		Id:           uuid.MustParse(s.ID),
-		Name:         s.Name,
-		Archetype:    s.Archetype,
-		Visibility:   gen.DeckVisibility(s.Visibility),
-		CoverCardId:  s.CoverCardID,
-		LikeCount:    s.LikeCount,
-		CommentCount: s.CommentCount,
-		LikedByMe:    &liked,
-		CreatedAt:    s.CreatedAt,
-		UpdatedAt:    s.UpdatedAt,
+		Id:            uuid.MustParse(s.ID),
+		Name:          s.Name,
+		Archetype:     s.Archetype,
+		Visibility:    gen.DeckVisibility(s.Visibility),
+		CoverCardId:   s.CoverCardID,
+		CoverImageUrl: a.coverURL(s),
+		LikeCount:     s.LikeCount,
+		CommentCount:  s.CommentCount,
+		LikedByMe:     &liked,
+		CreatedAt:     s.CreatedAt,
+		UpdatedAt:     s.UpdatedAt,
 		Owner: gen.UserSummary{
 			Id:        uuid.MustParse(s.Owner.ID),
 			Username:  s.Owner.Username,
@@ -138,8 +148,8 @@ func toAPISummary(s store.DeckSummary) gen.DeckSummary {
 	}
 }
 
-func toAPIDeck(d store.Deck) gen.Deck {
-	s := toAPISummary(d.DeckSummary)
+func (a *apiServer) toAPIDeck(d store.Deck) gen.Deck {
+	s := a.toAPISummary(d.DeckSummary)
 	st := deck.ComputeStats(d.Cards, d.Infos)
 	conv := func(es []deck.Entry) []gen.DeckCardEntry {
 		out := make([]gen.DeckCardEntry, len(es))
@@ -149,7 +159,7 @@ func toAPIDeck(d store.Deck) gen.Deck {
 		return out
 	}
 	return gen.Deck{
-		Id: s.Id, Name: s.Name, Archetype: s.Archetype, Visibility: s.Visibility, CoverCardId: s.CoverCardId,
+		Id: s.Id, Name: s.Name, Archetype: s.Archetype, Visibility: s.Visibility, CoverCardId: s.CoverCardId, CoverImageUrl: s.CoverImageUrl,
 		LikeCount: s.LikeCount, CommentCount: s.CommentCount, LikedByMe: s.LikedByMe,
 		CreatedAt: s.CreatedAt, UpdatedAt: s.UpdatedAt, Owner: s.Owner,
 		Description: d.Description,
@@ -181,7 +191,7 @@ func (a *apiServer) CreateDeck(ctx context.Context, req gen.CreateDeckRequestObj
 	if err != nil {
 		return nil, err
 	}
-	return gen.CreateDeck201JSONResponse(toAPIDeck(d)), nil
+	return gen.CreateDeck201JSONResponse(a.toAPIDeck(d)), nil
 }
 
 func (a *apiServer) UpdateDeck(ctx context.Context, req gen.UpdateDeckRequestObject) (gen.UpdateDeckResponseObject, error) {
@@ -222,7 +232,7 @@ func (a *apiServer) UpdateDeck(ctx context.Context, req gen.UpdateDeckRequestObj
 	if err != nil {
 		return nil, err
 	}
-	return gen.UpdateDeck200JSONResponse(toAPIDeck(d)), nil
+	return gen.UpdateDeck200JSONResponse(a.toAPIDeck(d)), nil
 }
 
 func (a *apiServer) DeleteDeck(ctx context.Context, req gen.DeleteDeckRequestObject) (gen.DeleteDeckResponseObject, error) {
@@ -260,7 +270,7 @@ func (a *apiServer) GetDeck(ctx context.Context, req gen.GetDeckRequestObject) (
 	if err != nil {
 		return nil, err
 	}
-	return gen.GetDeck200JSONResponse(toAPIDeck(d)), nil
+	return gen.GetDeck200JSONResponse(a.toAPIDeck(d)), nil
 }
 
 func (a *apiServer) CopyDeck(ctx context.Context, req gen.CopyDeckRequestObject) (gen.CopyDeckResponseObject, error) {
@@ -276,7 +286,7 @@ func (a *apiServer) CopyDeck(ctx context.Context, req gen.CopyDeckRequestObject)
 	if err != nil {
 		return nil, err
 	}
-	return gen.CopyDeck201JSONResponse(toAPIDeck(d)), nil
+	return gen.CopyDeck201JSONResponse(a.toAPIDeck(d)), nil
 }
 
 // ---- YDK --------------------------------------------------------------------
@@ -326,7 +336,7 @@ func (a *apiServer) ImportDeck(ctx context.Context, req gen.ImportDeckRequestObj
 	if err != nil {
 		return nil, err
 	}
-	return gen.ImportDeck201JSONResponse(toAPIDeck(d)), nil
+	return gen.ImportDeck201JSONResponse(a.toAPIDeck(d)), nil
 }
 
 func fromDeckCards(c deck.Cards) gen.DeckCards {
@@ -366,7 +376,7 @@ func (a *apiServer) listDeckPage(ctx context.Context, f store.DeckFilter, cursor
 	}
 	page := gen.DeckPage{Items: make([]gen.DeckSummary, 0, len(items))}
 	for _, s := range items {
-		page.Items = append(page.Items, toAPISummary(s))
+		page.Items = append(page.Items, a.toAPISummary(s))
 	}
 	if more {
 		last := items[len(items)-1]

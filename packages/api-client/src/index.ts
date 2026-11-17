@@ -43,7 +43,12 @@ const isAuthPath = (url: string) => /\/auth\/(login|register|refresh)$/.test(new
  */
 export function createApiClient({ baseUrl, tokens, onSessionExpired, fetch: fetchImpl }: ApiClientOptions) {
   const doFetch: typeof fetch = fetchImpl ?? ((...args) => globalThis.fetch(...args));
-  const client = createClient<paths>({ baseUrl, fetch: (req) => doFetch(req) });
+  const client = createClient<paths>({
+    baseUrl,
+    fetch: (req) => doFetch(req),
+    // A API espera listas separadas por vírgula (`ids=1,2,3`), não `ids=1&ids=2`.
+    querySerializer: { array: { style: "form", explode: false } },
+  });
 
   if (tokens) {
     const originals = new WeakMap<Request, Request>();

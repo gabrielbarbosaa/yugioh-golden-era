@@ -49,6 +49,12 @@ func (a *apiServer) ListCards(ctx context.Context, req gen.ListCardsRequestObjec
 		Level:     p.Level,
 		Archetype: nonEmpty(p.Archetype),
 	}
+	if p.Ids != nil {
+		if len(*p.Ids) > maxLimit {
+			return nil, badRequest("ids aceita no máximo 100 passcodes")
+		}
+		filter.IDs = *p.Ids // vazio (`?ids=`) já é recusado com 400 pelo binding gerado
+	}
 	if p.Q != nil {
 		if len([]rune(*p.Q)) > 100 {
 			return nil, badRequest("q deve ter no máximo 100 caracteres")

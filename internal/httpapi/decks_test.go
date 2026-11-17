@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -39,7 +40,8 @@ func (f *fakeDecks) Create(ctx context.Context, ownerID string, in store.DeckInp
 	now := time.Now()
 	f.decks[id] = &store.Deck{
 		DeckSummary: store.DeckSummary{ID: id, Name: in.Name, Archetype: in.Archetype, Visibility: in.Visibility,
-			CoverCardID: in.CoverCardID, CreatedAt: now, UpdatedAt: now, Owner: f.owner(ownerID)},
+			CoverCardID: in.CoverCardID, CoverImagePath: coverPath(in.CoverCardID),
+			CreatedAt: now, UpdatedAt: now, Owner: f.owner(ownerID)},
 		Description: in.Description, Cards: in.Cards,
 	}
 	return id, nil
@@ -56,8 +58,17 @@ func (f *fakeDecks) Replace(_ context.Context, id, ownerID string, in store.Deck
 		return store.ErrForbidden
 	}
 	d.Name, d.Description, d.Archetype, d.Visibility, d.Cards = in.Name, in.Description, in.Archetype, in.Visibility, in.Cards
-	d.CoverCardID, d.UpdatedAt = in.CoverCardID, time.Now()
+	d.CoverCardID, d.CoverImagePath, d.UpdatedAt = in.CoverCardID, coverPath(in.CoverCardID), time.Now()
 	return nil
+}
+
+// coverPath imita o JOIN com cards que o store real faz para achar a imagem da capa.
+func coverPath(id *int64) *string {
+	if id == nil {
+		return nil
+	}
+	p := "cards_small/" + strconv.FormatInt(*id, 10) + ".jpg"
+	return &p
 }
 
 func (f *fakeDecks) Delete(_ context.Context, id, ownerID string) error {
@@ -133,11 +144,12 @@ func newDeckServer(t *testing.T) *httptest.Server {
 	users, cards := newFakeUsers(), &fakeCards{}
 	decks := &fakeDecks{decks: map[string]*store.Deck{}, users: users, cards: cards}
 	srv := httptest.NewServer(NewHandler(log, "test", Deps{
-		Cards:  cards,
-		Users:  users,
-		Decks:  decks,
-		Social: &fakeSocial{decks: decks, users: users, likes: map[[2]string]bool{}},
-		Tokens: auth.NewTokens("test-secret-test-secret-test-secret-12", time.Minute, time.Hour),
+		Cards:        cards,
+		Users:        users,
+		Decks:        decks,
+		Social:       &fakeSocial{decks: decks, users: users, likes: map[[2]string]bool{}},
+		Tokens:       auth.NewTokens("test-secret-test-secret-test-secret-12", time.Minute, time.Hour),
+		ImageBaseURL: "http://img",
 	}))
 	t.Cleanup(srv.Close)
 	return srv
@@ -159,8 +171,10 @@ type deckResp struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
 	Visibility string `json:"visibility"`
-	Owner      struct{ Username string }
-	Stats      struct {
+	// CoverImageUrl é a imagem pequena da carta de capa (a primeira do deck principal).
+	CoverImageUrl *string `json:"coverImageUrl"`
+	Owner         struct{ Username string }
+	Stats         struct {
 		Monsters, Spells, Traps int
 		AverageLevel            float64
 	}
@@ -184,6 +198,9 @@ func TestCreateDeckAndStats(t *testing.T) {
 	}
 	if len(d.Cards.Main) != 3 || len(d.Cards.Extra) != 1 {
 		t.Errorf("cartas = %+v", d.Cards)
+	}
+	if d.CoverImageUrl == nil || *d.CoverImageUrl != "http://img/cards_small/1.jpg" {
+		t.Errorf("coverImageUrl = %v", d.CoverImageUrl)
 	}
 	call(t, "POST", srv.URL+"/v1/decks", "", draft("x", "private"), http.StatusUnauthorized, nil)
 }

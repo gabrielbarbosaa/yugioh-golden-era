@@ -552,6 +552,11 @@ export interface components {
             owner: components["schemas"]["UserSummary"];
             /** Format: int64 */
             coverCardId?: number | null;
+            /**
+             * Format: uri
+             * @description Imagem pequena da carta de capa (nula se o deck está vazio)
+             */
+            coverImageUrl?: string | null;
             likeCount: number;
             commentCount: number;
             likedByMe?: boolean;
@@ -802,6 +807,11 @@ export interface operations {
                 race?: string;
                 level?: number;
                 archetype?: string;
+                /**
+                 * @description Passcodes separados por vírgula (máx. 100). Devolve só essas cartas (as que não
+                 *     existem na era ficam de fora), útil para carregar as cartas de um deck de uma vez.
+                 */
+                ids?: number[];
                 /** @description Cursor opaco retornado em `nextCursor` */
                 cursor?: components["parameters"]["Cursor"];
                 limit?: components["parameters"]["Limit"];

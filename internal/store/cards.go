@@ -52,6 +52,7 @@ type CardFilter struct {
 	Race      *string
 	Level     *int
 	Archetype *string
+	IDs       []int64 // se preenchido, só estas cartas
 }
 
 // CardCursor marca a última carta devolvida; a ordenação é por (nome, id).
@@ -103,6 +104,9 @@ func (s *Cards) List(ctx context.Context, f CardFilter, after *CardCursor, limit
 	}
 	if f.Archetype != nil {
 		add("archetype = $$", *f.Archetype)
+	}
+	if len(f.IDs) > 0 {
+		add("id = ANY($$)", f.IDs)
 	}
 	if after != nil {
 		args = append(args, after.Name, after.ID)

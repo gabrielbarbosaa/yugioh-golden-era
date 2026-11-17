@@ -164,6 +164,17 @@ paths:
         - name: archetype
           in: query
           schema: { type: string }
+        - name: ids
+          in: query
+          description: |
+            Passcodes separados por vírgula (máx. 100). Devolve só essas cartas (as que não
+            existem na era ficam de fora), útil para carregar as cartas de um deck de uma vez.
+          style: form
+          explode: false
+          schema:
+            type: array
+            maxItems: 100
+            items: { type: integer, format: int64 }
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -862,6 +873,11 @@ components:
           type: integer
           format: int64
           nullable: true
+        coverImageUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Imagem pequena da carta de capa (nula se o deck está vazio)
         likeCount: { type: integer }
         commentCount: { type: integer }
         likedByMe: { type: boolean }

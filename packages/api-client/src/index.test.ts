@@ -126,3 +126,16 @@ test("sem TokenStore o cliente funciona anônimo (catálogo público)", async ()
   const { response } = await api.GET("/me");
   assert.equal(response.status, 401);
 });
+
+test("lista de ids vai separada por vírgula (formato esperado pela API)", async () => {
+  let url = "";
+  const fetchFn = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    url = new Request(input, init).url;
+    return json(200, { items: [] });
+  }) as typeof fetch;
+  const api = createApiClient({ baseUrl: "http://x/v1", fetch: fetchFn });
+
+  await api.GET("/cards", { params: { query: { ids: [46986414, 89631139], limit: 100 } } });
+
+  assert.equal(new URL(url).searchParams.get("ids"), "46986414,89631139");
+});
