@@ -14,11 +14,14 @@ import (
 
 	"github.com/golden-era/api/api"
 	"github.com/golden-era/api/internal/api/gen"
+	"github.com/golden-era/api/internal/auth"
 )
 
 // Deps reúne as dependências externas dos handlers.
 type Deps struct {
 	Cards        CardStore
+	Users        UserStore
+	Tokens       *auth.Tokens
 	ImagesDir    string    // pasta servida em /images/ (vazio desliga a rota)
 	ImageBaseURL string    // prefixo das URLs de imagem devolvidas nas cartas
 	EraEnd       time.Time // limite superior da era, usado ao listar sets
@@ -31,6 +34,8 @@ type apiServer struct {
 
 	version      string
 	cards        CardStore
+	users        UserStore
+	tokens       *auth.Tokens
 	imageBaseURL string
 	eraEnd       time.Time
 }
@@ -42,6 +47,12 @@ var implemented = map[string]bool{
 	"GetCard":        true,
 	"ListArchetypes": true,
 	"ListSets":       true,
+	"Register":       true,
+	"Login":          true,
+	"RefreshToken":   true,
+	"Logout":         true,
+	"GetMe":          true,
+	"UpdateMe":       true,
 }
 
 func (a *apiServer) GetHealth(context.Context, gen.GetHealthRequestObject) (gen.GetHealthResponseObject, error) {
@@ -65,16 +76,24 @@ func NewHandler(log *slog.Logger, version string, deps Deps) http.Handler {
 	srv := &apiServer{
 		version:      version,
 		cards:        deps.Cards,
+		users:        deps.Users,
+		tokens:       deps.Tokens,
 		imageBaseURL: deps.ImageBaseURL,
 		eraEnd:       deps.EraEnd,
 	}
-	strict := gen.NewStrictHandlerWithOptions(srv, []gen.StrictMiddlewareFunc{notImplemented}, gen.StrictHTTPServerOptions{
+	// O último da lista é o mais externo: primeiro barra o que não existe (501), depois autentica.
+	mws := []gen.StrictMiddlewareFunc{srv.authenticate, notImplemented}
+	strict := gen.NewStrictHandlerWithOptions(srv, mws, gen.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			writeProblem(w, http.StatusBadRequest, err.Error())
 		},
 		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			var bad badRequestError
+			var unauth unauthorizedError
 			switch {
+			case errors.As(err, &unauth):
+				w.Header().Set("WWW-Authenticate", "Bearer")
+				writeProblem(w, http.StatusUnauthorized, unauth.Error())
 			case errors.Is(err, errNotImplemented):
 				writeProblem(w, http.StatusNotImplemented, err.Error())
 			case errors.As(err, &bad):

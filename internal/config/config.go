@@ -20,7 +20,14 @@ type Config struct {
 	ImagesDir    string // pasta com as imagens baixadas pelo comando de ingestão
 	ImageBaseURL string // prefixo público das URLs de imagem devolvidas pela API
 	EraEndDate   string // fim da era (YYYY-MM-DD); filtra os sets listados
+
+	JWTSecret  string
+	AccessTTL  time.Duration
+	RefreshTTL time.Duration
 }
+
+// DevJWTSecret é o segredo padrão de desenvolvimento; nunca use em produção.
+const DevJWTSecret = "dev-only-secret-change-me-0123456789abcdef"
 
 // Load lê o ambiente aplicando valores padrão adequados ao desenvolvimento local.
 func Load(version string) (Config, error) {
@@ -33,6 +40,17 @@ func Load(version string) (Config, error) {
 		ImagesDir:       getenv("IMAGES_DIR", ".data/images"),
 		ImageBaseURL:    strings.TrimRight(getenv("IMAGE_BASE_URL", "http://localhost:"+port+"/images"), "/"),
 		EraEndDate:      getenv("ERA_END_DATE", "2003-12-31"),
+		JWTSecret:       getenv("JWT_SECRET", DevJWTSecret),
+	}
+	var err error
+	if cfg.AccessTTL, err = time.ParseDuration(getenv("ACCESS_TOKEN_TTL", "15m")); err != nil {
+		return Config{}, fmt.Errorf("ACCESS_TOKEN_TTL inválido: %w", err)
+	}
+	if cfg.RefreshTTL, err = time.ParseDuration(getenv("REFRESH_TOKEN_TTL", "720h")); err != nil {
+		return Config{}, fmt.Errorf("REFRESH_TOKEN_TTL inválido: %w", err)
+	}
+	if len(cfg.JWTSecret) < 32 {
+		return Config{}, fmt.Errorf("JWT_SECRET deve ter pelo menos 32 caracteres")
 	}
 	if _, err := time.Parse(time.DateOnly, cfg.EraEndDate); err != nil {
 		return Config{}, fmt.Errorf("ERA_END_DATE inválida %q: %w", cfg.EraEndDate, err)

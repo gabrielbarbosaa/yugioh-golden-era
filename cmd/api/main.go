@@ -14,6 +14,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/golden-era/api/internal/auth"
 	"github.com/golden-era/api/internal/config"
 	"github.com/golden-era/api/internal/httpapi"
 	"github.com/golden-era/api/internal/store"
@@ -36,6 +37,9 @@ func run() error {
 	}
 
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
+	if cfg.JWTSecret == config.DevJWTSecret {
+		log.Warn("usando JWT_SECRET de desenvolvimento; defina JWT_SECRET em produção")
+	}
 
 	eraEnd, _ := time.Parse(time.DateOnly, cfg.EraEndDate) // já validada em config.Load
 
@@ -54,6 +58,8 @@ func run() error {
 		Addr: cfg.Addr,
 		Handler: httpapi.NewHandler(log, cfg.Version, httpapi.Deps{
 			Cards:        store.NewCards(pool),
+			Users:        store.NewUsers(pool),
+			Tokens:       auth.NewTokens(cfg.JWTSecret, cfg.AccessTTL, cfg.RefreshTTL),
 			ImagesDir:    cfg.ImagesDir,
 			ImageBaseURL: cfg.ImageBaseURL,
 			EraEnd:       eraEnd,
