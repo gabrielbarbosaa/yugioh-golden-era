@@ -1,4 +1,7 @@
-# Infra de desenvolvimento local. A API roda no host (`go run ./cmd/api`).
+# Infra de desenvolvimento local.
+#
+#   docker compose up -d --wait                  só o Postgres (a API roda no host com `go run ./cmd/api`)
+#   docker compose --profile app up -d --build   Postgres + API em container (porta API_PORT, padrão 8080)
 services:
   db:
     image: postgres:17-alpine
@@ -15,6 +18,23 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    profiles: ["app"]
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://golden:golden@db:5432/golden_era?sslmode=disable
+      MIGRATE_ON_START: "true"
+      IMAGES_DIR: /data/images
+      IMAGE_BASE_URL: http://localhost:${API_PORT:-8080}/images
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-0123456789abcdef}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    volumes:
+      - ./.data/images:/data/images:ro
 
 volumes:
   pgdata:

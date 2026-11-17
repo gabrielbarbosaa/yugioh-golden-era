@@ -16,6 +16,9 @@ go build -o api ./cmd/api             # Dockerfile injects version via -ldflags 
 
 go generate ./api/                    # regenerate internal/api/gen from api/openapi.yaml (oapi-codegen as go tool)
 docker compose up -d --wait           # local Postgres (see .env.example for DATABASE_URL)
+docker compose --profile app up -d --build   # Postgres + API in a container (API_PORT, default 8080; migrations run on boot)
+MIGRATE_ON_START=true go run ./cmd/api       # same auto-migration when running on the host (default is off)
+go run ./cmd/sqlgen -apply            # generate import.sql AND execute it against DATABASE_URL (no psql needed)
 # apply migrations (PowerShell): $env:GOOSE_DRIVER='postgres'; $env:GOOSE_DBSTRING='<DATABASE_URL>'; go tool goose -dir migrations up
 
 # import catalog into Postgres (idempotent): generate SQL, then apply it
@@ -42,5 +45,6 @@ Ingest flags can also be set via env `ERA_REGION` (ocg|tcg), `ERA_START_DATE`, `
 - `internal/store`: pgx queries (`Cards`, `Users`, `Decks`, `Social`, `Collection`). `/v1/sets` only returns sets released up to `ERA_END_DATE`.
 - `internal/config`: env-based config (`PORT`, `LOG_LEVEL`, `DATABASE_URL`, `IMAGES_DIR`, `IMAGE_BASE_URL`, `ERA_END_DATE`; dev defaults match docker-compose). `cmd/api` pings Postgres at startup and fails if it is down.
 - `cmd/ingest` + `internal/ingest` (stdlib only): fetches the era's cards and sets from YGOPRODeck, writes `cards.json`, `sets.json`, `report.txt` and images (`cards/`, `cards_small/`) under `.data/`. Image download is rate-limited and resumable. This produces local files only; `cmd/sqlgen` (`ingest.WriteImportSQL`) turns them into an idempotent `.data/import.sql` that is applied to PostgreSQL with psql.
-- `migrations/`: goose-format SQL (`-- +goose Up`) for PostgreSQL (needs `pg_trgm`, `citext`). `cards.image_path` is relative; base URL is intended to come from `IMAGE_BASE_URL`. No DB access code exists yet.
+- **No GitHub Actions**: the owner does not want any workflow under `.github/`; keep checks local.
+- `migrations/` is also a Go package that embeds the `*.sql` files; `internal/migrate` applies them with goose's library (`MIGRATE_ON_START`). Goose-format SQL (`-- +goose Up`) for PostgreSQL (needs `pg_trgm`, `citext`). `cards.image_path` is relative; base URL is intended to come from `IMAGE_BASE_URL`. No DB access code exists yet.
 - `.data/` holds downloaded ingest output (untracked; large).

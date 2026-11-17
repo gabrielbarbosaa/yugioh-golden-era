@@ -17,6 +17,7 @@ import (
 	"github.com/golden-era/api/internal/auth"
 	"github.com/golden-era/api/internal/config"
 	"github.com/golden-era/api/internal/httpapi"
+	"github.com/golden-era/api/internal/migrate"
 	"github.com/golden-era/api/internal/store"
 )
 
@@ -43,8 +44,15 @@ func run() error {
 
 	eraEnd, _ := time.Parse(time.DateOnly, cfg.EraEndDate) // já validada em config.Load
 
-	dbCtx, cancelDB := context.WithTimeout(context.Background(), 10*time.Second)
+	dbCtx, cancelDB := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancelDB()
+	if cfg.MigrateOnStart {
+		version, err := migrate.Up(dbCtx, cfg.DatabaseURL)
+		if err != nil {
+			return err
+		}
+		log.Info("migrations aplicadas", "version", version)
+	}
 	pool, err := pgxpool.New(dbCtx, cfg.DatabaseURL)
 	if err != nil {
 		return fmt.Errorf("conectando ao banco: %w", err)

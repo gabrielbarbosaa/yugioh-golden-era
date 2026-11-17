@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -24,6 +25,8 @@ type Config struct {
 	JWTSecret  string
 	AccessTTL  time.Duration
 	RefreshTTL time.Duration
+
+	MigrateOnStart bool // aplica as migrations ao subir (MIGRATE_ON_START=true)
 }
 
 // DevJWTSecret é o segredo padrão de desenvolvimento; nunca use em produção.
@@ -43,6 +46,9 @@ func Load(version string) (Config, error) {
 		JWTSecret:       getenv("JWT_SECRET", DevJWTSecret),
 	}
 	var err error
+	if cfg.MigrateOnStart, err = strconv.ParseBool(getenv("MIGRATE_ON_START", "false")); err != nil {
+		return Config{}, fmt.Errorf("MIGRATE_ON_START inválido: %w", err)
+	}
 	if cfg.AccessTTL, err = time.ParseDuration(getenv("ACCESS_TOKEN_TTL", "15m")); err != nil {
 		return Config{}, fmt.Errorf("ACCESS_TOKEN_TTL inválido: %w", err)
 	}
