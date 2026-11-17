@@ -1,7 +1,7 @@
 # Infra de desenvolvimento local.
 #
 #   docker compose up -d --wait                  só o Postgres (a API roda no host com `go run ./cmd/api`)
-#   docker compose --profile app up -d --build   Postgres + API em container (porta API_PORT, padrão 8080)
+#   docker compose --profile app up -d --build   Postgres + API (API_PORT, padrão 8080) + site (WEB_PORT, padrão 3000) em containers
 services:
   db:
     image: postgres:17-alpine
@@ -35,6 +35,21 @@ services:
       - "${API_PORT:-8080}:8080"
     volumes:
       - ./.data/images:/data/images:ro
+
+  web:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      - api
+    environment:
+      # O site chama a API de dentro da rede do compose; o navegador só carrega as imagens, pelo IMAGE_BASE_URL da API.
+      API_URL: http://api:8080/v1
+      # Em HTTP (desenvolvimento) o cookie `Secure` seria recusado; ligue com HTTPS em produção.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
 
 volumes:
   pgdata:

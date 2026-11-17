@@ -1,0 +1,26 @@
+# Usado só pelo apps/web/Dockerfile (contexto = raiz do repositório). O .dockerignore da raiz é o da API em Go.
+.git
+.data
+.env
+.env.*
+node_modules
+**/node_modules
+**/.next
+**/dist
+**/.expo
+
+# API em Go e infra: não entram na imagem do site
+cmd
+internal
+migrations
+api
+*.go
+go.mod
+go.sum
+docker-compose.yml
+Dockerfile
+*.md
+
+# O app mobile só precisa do package.json (para o lockfile)
+apps/mobile/**
+!apps/mobile/package.json
