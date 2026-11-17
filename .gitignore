@@ -1,0 +1,14 @@
+# Imagens baixadas pelo comando de ingestão (regeneráveis com `go run ./cmd/ingest`)
+.data/images/
+.data/failed_images.txt
+.data/import.sql
+
+# Binários e artefatos de build
+*.exe
+*.test
+*.out
+
+# Ambiente local
+.env
+.env.*
+!.env.example

@@ -1,0 +1,17 @@
+Era: OCG de 1999-01-01 até 2003-12-31
+Total de cartas: 1732
+  Monstros (main): 1088
+  Monstros (extra deck): 69
+  Magias: 351
+  Armadilhas: 224
+Arquétipos distintos: 74
+Datas na região: de 1999-02-04 a 2003-12-11
+Cartas emblemáticas:
+  [ok] Blue-Eyes White Dragon
+  [ok] Dark Magician
+  [ok] Exodia the Forbidden One
+  [ok] Kuriboh
+  [ok] Red-Eyes Black Dragon
+  [ok] Summoned Skull
+  [ok] Time Wizard
+Sem avisos.

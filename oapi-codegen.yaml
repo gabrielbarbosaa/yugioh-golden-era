@@ -1,0 +1,9 @@
+﻿# ConfiguraÃ§Ã£o do oapi-codegen (https://github.com/oapi-codegen/oapi-codegen).
+# Gera tipos e a interface do servidor a partir de api/openapi.yaml.
+package: gen
+generate:
+  models: true
+  std-http-server: true   # usa o ServeMux da stdlib (Go 1.22+)
+  strict-server: true     # handlers tipados: recebem e devolvem structs
+  embedded-spec: true
+
