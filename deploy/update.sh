@@ -10,6 +10,10 @@ if [ ! -f .env.production ]; then
 fi
 
 git pull --ff-only
-docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build --remove-orphans
+# Com PROXY_NETWORK no .env.production (proxy em Docker), liga os serviços à rede do proxy.
+FILES=(-f docker-compose.prod.yml)
+if grep -q '^PROXY_NETWORK=' .env.production; then FILES+=(-f docker-compose.proxy.yml); fi
+
+docker compose "${FILES[@]}" --env-file .env.production up -d --build --remove-orphans
 docker image prune -f >/dev/null
-docker compose -f docker-compose.prod.yml --env-file .env.production ps
+docker compose "${FILES[@]}" --env-file .env.production ps

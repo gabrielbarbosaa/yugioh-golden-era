@@ -1,0 +1,25 @@
+# Complemento do docker-compose.prod.yml para quando o proxy HTTPS já roda em Docker (Caddy, Traefik, nginx...) numa
+# rede própria: liga a API, o duelo e o site a essa rede, com nomes únicos (novaera-api, novaera-duel, novaera-web),
+# para o proxy alcançá-los sem abrir portas. Ative definindo PROXY_NETWORK no .env.production (ex.: PROXY_NETWORK=proxy);
+# o deploy/update.sh passa a usar este arquivo sozinho quando a variável existe.
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:?defina PROXY_NETWORK com o nome da rede Docker do proxy}
+
+services:
+  api:
+    networks:
+      default: {}
+      proxy:
+        aliases: [novaera-api]
+  duel:
+    networks:
+      default: {}
+      proxy:
+        aliases: [novaera-duel]
+  web:
+    networks:
+      default: {}
+      proxy:
+        aliases: [novaera-web]

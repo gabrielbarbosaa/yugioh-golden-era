@@ -20,3 +20,7 @@ node_modules/
 dist/
 expo-env.d.ts
 .data/*.log
+
+# Arquivos de transferencia para a VPS (gerados localmente; grandes)
+catalog.sql
+images.tgz

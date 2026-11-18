@@ -1,0 +1,22 @@
+# Bloco para um Caddy que roda em Docker e importa sites/*.caddy (ex.: /home/deploy/proxy/sites/novaera.caddy).
+# Os upstreams são os nomes da rede do proxy definidos em docker-compose.proxy.yml.
+novaera.gabrielbarbosadev.com.br {
+	encode zstd gzip
+
+	handle /v1/* {
+		reverse_proxy novaera-api:8080
+	}
+	handle /images/* {
+		reverse_proxy novaera-api:8080
+	}
+
+	@duel path /duel-server /duel-server/*
+	handle @duel {
+		uri strip_prefix /duel-server
+		reverse_proxy novaera-duel:8787
+	}
+
+	handle {
+		reverse_proxy novaera-web:3000
+	}
+}

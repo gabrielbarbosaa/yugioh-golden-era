@@ -95,6 +95,18 @@ sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx -d novaera.gabrielbarbosadev.com.br
 ```
 
+**Caddy (ou outro proxy) que já roda em Docker na VPS:** não instale outro proxy (as portas 80/443 já estão em uso).
+Descubra a rede dele (`docker network ls`; ex.: `proxy`) e ligue o Novaera a ela:
+
+```bash
+echo 'PROXY_NETWORK=proxy' >> .env.production        # nome da rede do seu proxy
+docker compose -f docker-compose.prod.yml -f docker-compose.proxy.yml --env-file .env.production up -d
+cp deploy/caddy-docker.caddy ~/proxy/sites/novaera.caddy       # pasta que o Caddyfile importa (sites/*.caddy)
+docker exec proxy-caddy-1 caddy validate --config /etc/caddy/Caddyfile
+docker exec proxy-caddy-1 caddy reload --config /etc/caddy/Caddyfile
+```
+
+O `deploy/update.sh` passa a incluir o `docker-compose.proxy.yml` sozinho quando `PROXY_NETWORK` existe.
 ## 8. Conferir
 
 ```bash
