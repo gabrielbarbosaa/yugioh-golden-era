@@ -1,0 +1,25 @@
+# Caddy (HTTPS automático via Let's Encrypt). Acrescente este bloco ao Caddyfile da VPS (ou use o arquivo inteiro).
+# As portas são as de .env.production (API_PORT 18080, DUEL_PORT 18787, WEB_PORT 13000).
+novaera.gabrielbarbosadev.com.br {
+	encode zstd gzip
+
+	# API do app e imagens das cartas
+	handle /v1/* {
+		reverse_proxy 127.0.0.1:18080
+	}
+	handle /images/* {
+		reverse_proxy 127.0.0.1:18080
+	}
+
+	# Servidor de duelo: ingressos (POST /duel-server/tickets) e WebSocket (wss://.../duel-server/)
+	@duel path /duel-server /duel-server/*
+	handle @duel {
+		uri strip_prefix /duel-server
+		reverse_proxy 127.0.0.1:18787
+	}
+
+	# Todo o resto é o site
+	handle {
+		reverse_proxy 127.0.0.1:13000
+	}
+}

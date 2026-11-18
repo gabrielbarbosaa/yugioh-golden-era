@@ -1,0 +1,81 @@
+# Produção (VPS). Tudo escuta só em 127.0.0.1: quem fica na frente é o proxy HTTPS (veja deploy/Caddyfile e
+# deploy/nginx.conf). Variáveis vêm do arquivo .env.production (modelo em .env.production.example):
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+# Passo a passo completo em DEPLOY.md.
+name: novaera
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-golden}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env.production}
+      POSTGRES_DB: ${POSTGRES_DB:-golden_era}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-golden} -d ${POSTGRES_DB:-golden_era}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-golden}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-golden_era}?sslmode=disable
+      MIGRATE_ON_START: "true"
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET (32+ caracteres) no .env.production}
+      IMAGES_DIR: /data/images
+      IMAGE_BASE_URL: https://${DOMAIN:?defina DOMAIN no .env.production}/images
+      # O proxy sobrescreve X-Forwarded-For, então os limites por IP (cadastro) usam o IP real do visitante.
+      TRUST_PROXY: "true"
+      # Só o próprio site (e o app web, se um dia houver) chamam a API do navegador.
+      CORS_ORIGINS: https://${DOMAIN}
+    ports:
+      - "127.0.0.1:${API_PORT:-18080}:8080"
+    volumes:
+      - ${IMAGES_PATH:-./.data/images}:/data/images:ro
+
+  duel:
+    build:
+      context: .
+      dockerfile: apps/duel-server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      # Pergunta à API (GET /me) quem é o dono de cada ingresso de entrada.
+      API_URL: http://api:8080/v1
+      # O app no navegador pode pedir ingressos de https://DOMAIN.
+      CORS_ORIGINS: https://${DOMAIN}
+    ports:
+      - "127.0.0.1:${DUEL_PORT:-18787}:8787"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+      - duel
+    environment:
+      API_URL: http://api:8080/v1
+      COOKIE_SECURE: "true"
+      DUEL_HTTP_URL: http://duel:8787
+      # O navegador abre o WebSocket pelo proxy (rota /duel-server/) e carrega as imagens por /images.
+      NEXT_PUBLIC_DUEL_WS_URL: wss://${DOMAIN}/duel-server/
+      NEXT_PUBLIC_IMAGE_BASE_URL: https://${DOMAIN}/images
+    ports:
+      - "127.0.0.1:${WEB_PORT:-13000}:3000"
+
+volumes:
+  pgdata:

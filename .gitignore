@@ -12,6 +12,7 @@
 .env
 .env.*
 !.env.example
+!.env.production.example
 
 # JavaScript (workspace: apps/mobile, packages/api-client e, depois, apps/web)
 node_modules/
