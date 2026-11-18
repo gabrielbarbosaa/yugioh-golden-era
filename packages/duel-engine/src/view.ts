@@ -1,5 +1,5 @@
 import { shuffle } from "./rng.ts";
-import type { GameEvent, GameState, PlayerIndex, Position, Rules, Star } from "./types.ts";
+import type { Choice, FieldRef, GameEvent, GameState, PlayerIndex, Position, Rules, Star } from "./types.ts";
 
 /** Um monstro como o jogador o enxerga: o oponente não vê a carta virada para baixo. */
 export interface MonsterView {
@@ -12,6 +12,11 @@ export interface MonsterView {
   movedOn: number;
 }
 
+/** Uma zona de armadilha: o oponente só vê que há uma carta virada (`cardId` nulo). */
+export interface TrapView {
+  cardId: number | null;
+}
+
 export interface PlayerView {
   lp: number;
   deckCount: number;
@@ -19,15 +24,25 @@ export interface PlayerView {
   /** A mão só aparece para o dono; para o oponente é `null` (só a contagem). */
   hand: number[] | null;
   field: (MonsterView | null)[];
+  traps: (TrapView | null)[];
   graveyard: number[];
 }
+
+/** Resposta ou escolha em andamento. As opções de uma escolha só aparecem para quem escolhe. */
+export type PendingView =
+  | { type: "respond"; player: PlayerIndex; attacker: FieldRef; target: number | "direct" }
+  | { type: "choose"; player: PlayerIndex; effect: string; options: Choice[] | null };
 
 /** O que um jogador pode saber do estado. Nunca vaza a mão nem a ordem do baralho do oponente, nem a semente. */
 export interface GameView {
   you: PlayerIndex;
   turn: number;
   current: PlayerIndex;
+  /** Quem pode agir agora: igual a `current`, exceto durante uma resposta ou escolha pendente. */
+  actor: PlayerIndex;
   played: boolean;
+  spellUsed: boolean;
+  pending: PendingView | null;
   /** Indexado pelo assento (0 ou 1), o mesmo de `you` e `current`. */
   players: [PlayerView, PlayerView];
   winner: PlayerIndex | "draw" | null;
@@ -55,19 +70,27 @@ export function viewFor(state: GameState, viewer: PlayerIndex): GameView {
           movedOn: m.movedOn,
         };
       }),
+      traps: p.traps.map((id) => (id === null ? null : { cardId: mine ? id : null })),
       graveyard: [...p.graveyard],
     };
   };
+  const pend = state.pending;
   return {
     you: viewer,
     turn: state.turn,
     current: state.current,
+    actor: pend ? pend.player : state.current,
     played: state.played,
+    spellUsed: state.spellUsed,
+    pending: !pend ? null : pend.type === "respond" ? pend : { type: "choose", player: pend.player, effect: pend.effect, options: pend.player === viewer ? pend.options : null },
     players: [view(0), view(1)],
     winner: state.winner,
     reason: state.reason,
   };
 }
+
+/** Quantas magias/armadilhas entram num baralho aleatório. */
+const RANDOM_SUPPORT = 6;
 
 /**
  * Baralho aleatório válido (40 cartas, até 3 cópias, só monstros de baralho), determinístico pela semente.
@@ -81,6 +104,19 @@ export function randomDeck(rules: Rules, seed: number): number[] {
   const { items, state } = shuffle(ids, seed >>> 0);
   const deck: number[] = [];
   let rng = state;
+
+  // Algumas magias e armadilhas (até RANDOM_SUPPORT cartas), para o baralho aleatório mostrar o que o modo tem.
+  const support = Object.values(rules.support).map((s) => s.id).sort((a, b) => a - b);
+  const sup = shuffle(support, rng);
+  rng = sup.state;
+  for (const id of sup.items) {
+    if (deck.length >= Math.min(RANDOM_SUPPORT, rules.deckSize)) break;
+    const r = shuffle([1, 2], rng);
+    rng = r.state;
+    const copies = Math.min(r.items[0]!, Math.min(RANDOM_SUPPORT, rules.deckSize) - deck.length);
+    for (let k = 0; k < copies; k++) deck.push(id);
+  }
+
   for (const id of items) {
     if (deck.length >= rules.deckSize) break;
     const r = shuffle([1, 2, 3], rng);
@@ -102,6 +138,7 @@ export function eventsFor(events: readonly GameEvent[], viewer: PlayerIndex): Ga
   return events.map((e) => {
     if ("player" in e && e.player !== viewer) {
       if (e.type === "draw") return { ...e, cardId: HIDDEN_CARD };
+      if (e.type === "set") return { ...e, cardId: HIDDEN_CARD };
       if (e.type === "play" && e.position === "facedown") return { ...e, cardId: HIDDEN_CARD, star: null, materials: [] };
     }
     return e;

@@ -1,7 +1,7 @@
 # Infra de desenvolvimento local.
 #
 #   docker compose up -d --wait                  só o Postgres (a API roda no host com `go run ./cmd/api`)
-#   docker compose --profile app up -d --build   Postgres + API (API_PORT, padrão 8080) + site (WEB_PORT, padrão 3000) em containers
+#   docker compose --profile app up -d --build   Postgres + API (API_PORT, padrão 8080) + servidor de duelo (DUEL_PORT, padrão 8787) + site (WEB_PORT, padrão 3000) em containers
 services:
   db:
     image: postgres:17-alpine
@@ -36,6 +36,19 @@ services:
     volumes:
       - ./.data/images:/data/images:ro
 
+  duel:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: apps/duel-server/Dockerfile
+    depends_on:
+      - api
+    environment:
+      # Pergunta à API (GET /me) quem é o dono de cada ingresso de entrada.
+      API_URL: http://api:8080/v1
+    ports:
+      - "${DUEL_PORT:-8787}:8787"
+
   web:
     profiles: ["app"]
     build:
@@ -43,11 +56,16 @@ services:
       dockerfile: apps/web/Dockerfile
     depends_on:
       - api
+      - duel
     environment:
       # O site chama a API de dentro da rede do compose; o navegador só carrega as imagens, pelo IMAGE_BASE_URL da API.
       API_URL: http://api:8080/v1
       # Em HTTP (desenvolvimento) o cookie `Secure` seria recusado; ligue com HTTPS em produção.
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # Servidor de duelo: o site troca a sessão por ingresso por dentro da rede; o navegador abre o WebSocket pelo host.
+      DUEL_HTTP_URL: http://duel:8787
+      NEXT_PUBLIC_DUEL_WS_URL: ws://localhost:${DUEL_PORT:-8787}
+      NEXT_PUBLIC_IMAGE_BASE_URL: http://localhost:${API_PORT:-8080}/images
     ports:
       - "${WEB_PORT:-3000}:3000"
 

@@ -1,0 +1,26 @@
+# Lista aproximada montada a partir do anime (era Duel Monsters); cartas que não existem no catálogo da era vão para missing.
+slug: weevil
+personagem: Weevil Underwood
+serie: Reino dos Duelistas
+descricao: O deck de insetos de Weevil: a Rainha Inseto, evoluções de casulo e a fusão que transforma lagartas em mariposas.
+capa: Insect Queen
+
+1 Insect Queen
+1 Basic Insect
+1 Great Moth
+1 Perfectly Ultimate Great Moth
+1 Larvae Moth
+1 Petit Moth
+1 Cocoon of Evolution
+1 Hercules Beetle
+1 Killer Needle
+1 Mushroom Man #2
+1 Needle Worm
+1 Pinch Hopper
+1 Insect Armor with Laser Cannon
+1 Cyber Jar
+1 Monster Reborn
+1 Pot of Greed
+1 Mirror Force
+1 Trap Hole
+1 Poison of the Old Man

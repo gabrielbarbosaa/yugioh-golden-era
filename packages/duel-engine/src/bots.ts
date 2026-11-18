@@ -1,7 +1,7 @@
-import { legalActions, otherPlayer, resolveBattle } from "./engine.ts";
+import { actorOf, legalActions, otherPlayer, resolveBattle } from "./engine.ts";
 import { resolveFusion } from "./pool.ts";
 import { starAdvantage } from "./stars.ts";
-import type { Action, AttackAction, GameState, PlayAction, Rules } from "./types.ts";
+import type { Action, AttackAction, Choice, GameState, PlayAction, Rules, SpellAction } from "./types.ts";
 
 /** Um bot escolhe a próxima ação a partir do estado (e de um gerador aleatório próprio, separado do jogo). */
 export type Bot = (rules: Rules, state: GameState, random: () => number) => Action;
@@ -10,7 +10,8 @@ export type Bot = (rules: Rules, state: GameState, random: () => number) => Acti
 export const randomBot: Bot = (rules, state, random) => {
   const actions = legalActions(rules, state);
   const others = actions.filter((a) => a.type !== "endTurn");
-  if (others.length > 0 && random() < 0.9) return others[Math.floor(random() * others.length)]!;
+  // Com algo pendente não há "encerrar turno": só responder, passar ou escolher.
+  if (others.length > 0 && (state.pending || random() < 0.9)) return others[Math.floor(random() * others.length)]!;
   return { type: "endTurn" };
 };
 
@@ -23,13 +24,73 @@ const powerOf = (rules: Rules, id: number) => {
  * Bot simples com bom senso: funde quando pode, joga a carta mais forte, só ataca quando ganha e
  * deixa em defesa o que não aguenta. Serve de "jogador razoável" para medir equilíbrio.
  */
-export const greedyBot: Bot = (rules, state) => {
+/** Poder de um alvo de escolha: o ATK da carta (monstro em campo ou do cemitério). */
+function choicePower(rules: Rules, state: GameState, c: Choice): number {
+  const id = c.kind === "field" ? state.players[c.side].field[c.zone]?.cardId : state.players[c.side].graveyard[c.index];
+  return id === undefined ? 0 : (rules.cards[id]?.atk ?? 0);
+}
+
+/** Responde ao que está pendente: usa a primeira reação disponível e escolhe sempre o alvo mais forte do oponente. */
+function answerPending(rules: Rules, state: GameState, actions: Action[]): Action {
+  const pend = state.pending!;
+  if (pend.type === "respond") return actions.find((a) => a.type === "respond") ?? { type: "pass" };
+
+  const me = pend.player;
+  let best = 0;
+  let bestScore = -Infinity;
+  pend.options.forEach((o, i) => {
+    const power = choicePower(rules, state, o);
+    // Destruir/devolver: o monstro mais forte do oponente; reviver: a carta mais forte, de qualquer cemitério.
+    const score = pend.effect === "monsterReborn" ? power : o.side === me ? -power - 10000 : power;
+    if (score > bestScore) {
+      bestScore = score;
+      best = i;
+    }
+  });
+  return { type: "choose", index: best };
+}
+
+/** Vale a pena usar esta magia agora? (O motor já garante que ela tem efeito.) */
+function worthCasting(rules: Rules, state: GameState, a: SpellAction): boolean {
   const me = state.players[state.current];
   const foe = state.players[otherPlayer(state.current)];
-  const actions = legalActions(rules, state);
+  const power = (p: typeof me) => p.field.reduce((sum, m) => sum + (m ? (rules.cards[m.cardId]?.atk ?? 0) : 0), 0);
+  switch (rules.support[me.hand[a.hand]!]?.effect) {
+    case "darkHole":
+      return power(foe) > power(me);
+    case "dianKeto":
+      return me.lp <= rules.startingLp - 1000;
+    default:
+      return true;
+  }
+}
 
-  // 1) Jogar: prefere a fusão/monstro mais forte.
-  const plays = actions.filter((a): a is PlayAction => a.type === "play");
+export const greedyBot: Bot = (rules, state) => {
+  const actor = actorOf(state);
+  const me = state.players[actor];
+  const foe = state.players[otherPlayer(actor)];
+  const actions = legalActions(rules, state);
+  if (state.pending) return answerPending(rules, state, actions);
+
+  // 0) Magias úteis e armadilhas para pôr viradas (não gastam a jogada de monstro do turno).
+  const spell = actions.find((a): a is SpellAction => a.type === "spell" && worthCasting(rules, state, a));
+  if (spell) return spell;
+  const trap = actions.find((a) => a.type === "setTrap");
+  if (trap) return trap;
+
+  // 1) Jogar: prefere a fusão/monstro mais forte. Com o campo cheio só vale sacrificar o monstro mais fraco, e só por um mais forte.
+  let plays = actions.filter((a): a is PlayAction => a.type === "play");
+  if (plays.some((p) => p.sacrifice !== undefined)) {
+    let weakest = -1;
+    me.field.forEach((m, z) => {
+      if (m && (weakest < 0 || powerOf(rules, m.cardId) < powerOf(rules, me.field[weakest]!.cardId))) weakest = z;
+    });
+    const weakestPower = weakest < 0 ? Infinity : powerOf(rules, me.field[weakest]!.cardId);
+    plays = plays.filter((p) => {
+      const r = pickResult(rules, me.hand, p);
+      return p.sacrifice === weakest && r !== null && Math.max(r.atk, r.def) > weakestPower;
+    });
+  }
   if (plays.length > 0) {
     const score = (a: PlayAction) => {
       const r = pickResult(rules, me.hand, a);
@@ -39,7 +100,7 @@ export const greedyBot: Bot = (rules, state) => {
     };
     const best = [...plays].sort((x, y) => score(y) - score(x))[0]!;
     // Dentro da mesma jogada, escolhe posição e estrela.
-    const variants = plays.filter((p) => p.result === best.result && p.hand.length === best.hand.length && p.hand.every((h, i) => h === best.hand[i]));
+    const variants = plays.filter((p) => p.result === best.result && p.sacrifice === best.sacrifice && p.hand.length === best.hand.length && p.hand.every((h, i) => h === best.hand[i]));
     const foeBest = Math.max(0, ...foe.field.map((m) => (m ? rules.cards[m.cardId]!.atk : 0)));
     const resultCard = pickResult(rules, me.hand, best);
     const wantAttack = resultCard ? resultCard.atk >= foeBest : true;

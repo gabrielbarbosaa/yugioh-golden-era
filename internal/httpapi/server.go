@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/golden-era/api/api"
+	"github.com/golden-era/api/internal/animedecks"
 	"github.com/golden-era/api/internal/api/gen"
 	"github.com/golden-era/api/internal/auth"
 	"github.com/golden-era/api/internal/banlist"
@@ -26,12 +27,13 @@ type Deps struct {
 	Social       SocialStore
 	Collection   CollectionStore
 	Tokens       *auth.Tokens
-	ImagesDir    string        // pasta servida em /images/ (vazio desliga a rota)
-	ImageBaseURL string        // prefixo das URLs de imagem devolvidas nas cartas
-	EraEnd       time.Time     // limite superior da era, usado ao listar sets
-	CORSOrigins  []string      // origens de navegador autorizadas ("*" libera todas)
-	Banlist      *banlist.List // lista de proibidas/limitadas aplicada aos decks (nil usa a embutida)
-	TrustProxy   bool          // usa X-Forwarded-For como IP do cliente (só atrás de um proxy confiável)
+	ImagesDir    string                 // pasta servida em /images/ (vazio desliga a rota)
+	ImageBaseURL string                 // prefixo das URLs de imagem devolvidas nas cartas
+	EraEnd       time.Time              // limite superior da era, usado ao listar sets
+	CORSOrigins  []string               // origens de navegador autorizadas ("*" libera todas)
+	Banlist      *banlist.List          // lista de proibidas/limitadas aplicada aos decks (nil usa a embutida)
+	AnimeDecks   *animedecks.Collection // decks de personagens do anime (nil usa os embutidos)
+	TrustProxy   bool                   // usa X-Forwarded-For como IP do cliente (só atrás de um proxy confiável)
 }
 
 // apiServer implementa as operações já prontas de gen.StrictServerInterface.
@@ -52,33 +54,36 @@ type apiServer struct {
 	registers    *ipLimiter
 	trustProxy   bool
 	bans         *banlist.List
+	anime        *animedecks.Collection
 }
 
 // implemented lista as operações (nome Go, como o gerador as passa ao middleware) que têm handler.
 var implemented = map[string]bool{
-	"GetHealth":      true,
-	"ListCards":      true,
-	"GetCard":        true,
-	"ListArchetypes": true,
-	"ListSets":       true,
-	"GetBanlist":     true,
-	"GetCardFacets":  true,
-	"Register":       true,
-	"Login":          true,
-	"RefreshToken":   true,
-	"Logout":         true,
-	"GetMe":          true,
-	"UpdateMe":       true,
-	"ListDecks":      true,
-	"CreateDeck":     true,
-	"ImportDeck":     true,
-	"GetDeck":        true,
-	"UpdateDeck":     true,
-	"DeleteDeck":     true,
-	"CopyDeck":       true,
-	"ExportDeck":     true,
-	"ListMyDecks":    true,
-	"ListUserDecks":  true,
+	"GetHealth":       true,
+	"ListCards":       true,
+	"GetCard":         true,
+	"ListArchetypes":  true,
+	"ListSets":        true,
+	"GetBanlist":      true,
+	"GetCardFacets":   true,
+	"Register":        true,
+	"Login":           true,
+	"RefreshToken":    true,
+	"Logout":          true,
+	"GetMe":           true,
+	"UpdateMe":        true,
+	"ListDecks":       true,
+	"CreateDeck":      true,
+	"ImportDeck":      true,
+	"GetDeck":         true,
+	"UpdateDeck":      true,
+	"DeleteDeck":      true,
+	"CopyDeck":        true,
+	"ExportDeck":      true,
+	"ListMyDecks":     true,
+	"ListUserDecks":   true,
+	"ListAnimeDecks":  true,
+	"ImportAnimeDeck": true,
 
 	"LikeDeck":          true,
 	"UnlikeDeck":        true,
@@ -124,6 +129,10 @@ func NewHandler(log *slog.Logger, version string, deps Deps) http.Handler {
 		registers:    newIPLimiter(registerMaxPerIP, registerWindow),
 		trustProxy:   deps.TrustProxy,
 		bans:         deps.Banlist,
+		anime:        deps.AnimeDecks,
+	}
+	if srv.anime == nil {
+		srv.anime = animedecks.Default()
 	}
 	if srv.bans == nil {
 		srv.bans = banlist.Default()

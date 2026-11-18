@@ -5,12 +5,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { setLike } from "@/app/actions";
+import { copyDeck, setLike } from "@/app/actions";
 import { LimitBadge } from "@/components/limit-badge";
 import { PageBanner } from "@/components/page-banner";
 import { CommentForm } from "@/components/comment-form";
+import { SubmitButton } from "@/components/submit-button";
 import { api, describeError } from "@/lib/api";
-import { authHeaders } from "@/lib/session";
+import { authHeaders, getCurrentUser } from "@/lib/session";
 
 type Params = Promise<{ id: string }>;
 type Entry = Schemas["DeckCardEntry"];
@@ -49,6 +50,7 @@ async function DeckDetail({ params }: { params: Params }) {
   if (response.status === 404 || response.status === 422) notFound();
   if (!deck) throw new Error(describeError(error));
   const signedIn = headers !== undefined;
+  const isOwner = signedIn && (await getCurrentUser())?.id === deck.owner.id;
 
   // O deck só traz ids e quantidades; os dados das cartas vêm em uma única chamada (máx. 100 ids).
   const ids = [...new Set(ZONES.flatMap((z) => deck.cards[z.key].map((e) => e.cardId)))];
@@ -115,6 +117,17 @@ async function DeckDetail({ params }: { params: Params }) {
         </div>
 
         <aside>
+      {isOwner ? (
+        <p>
+          <Link href={`/decks/${id}/edit`} className="button">
+            Editar deck
+          </Link>
+        </p>
+      ) : signedIn && deck.visibility === "public" ? (
+        <form action={copyDeck.bind(null, id)}>
+          <SubmitButton pending="Copiando…">Copiar para minha conta</SubmitButton>
+        </form>
+      ) : null}
       {deck.visibility === "public" ? (
         signedIn ? (
           <form action={setLike.bind(null, id, !deck.likedByMe)} className="like-form">
@@ -146,7 +159,6 @@ async function DeckDetail({ params }: { params: Params }) {
           <p className="muted">Ainda não há comentários.</p>
         )}
         {deck.visibility === "public" && signedIn ? <CommentForm deckId={id} /> : null}
-        <p className="muted">Para copiar este deck ou montar os seus, use o app Golden Era.</p>
       </section>
         </aside>
       </div>

@@ -10,12 +10,15 @@ COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
 COPY apps/mobile/package.json apps/mobile/
 COPY packages/api-client/package.json packages/api-client/
+COPY packages/duel-engine/package.json packages/duel-engine/
+COPY apps/duel-server/package.json apps/duel-server/
 RUN npm ci --workspace @golden-era/web --include-workspace-root
 
 # 2) Build (output "standalone": .next/standalone com o servidor e só os node_modules necessários).
 FROM deps AS build
 COPY apps/web apps/web
 COPY packages/api-client packages/api-client
+COPY packages/duel-engine packages/duel-engine
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build --workspace @golden-era/web
 

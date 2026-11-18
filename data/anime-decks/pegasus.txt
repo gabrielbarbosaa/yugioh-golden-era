@@ -1,0 +1,27 @@
+# Lista aproximada montada a partir do anime (era Duel Monsters); cartas que não existem no catálogo da era vão para missing.
+slug: pegasus
+personagem: Maximillion Pegasus
+serie: Reino dos Duelistas
+descricao: O criador do jogo e seu deck Toon, com o Toon World e os monstros de desenho animado, mais os Olhos Milenares.
+capa: Toon World
+
+1 Toon World
+1 Toon Summoned Skull
+1 Toon Mermaid
+1 Toon Dark Magician Girl
+1 Toon Gemini Elf
+1 Toon Cannon Soldier
+1 Toon Goblin Attack Force
+1 Manga Ryu-Ran
+1 Relinquished
+1 Thousand-Eyes Restrict
+1 Thousand-Eyes Idol
+1 Crass Clown
+1 Gemini Elf
+1 Mystic Clown
+1 Dark Magician Girl
+1 Pot of Greed
+1 Monster Reborn
+1 Mirror Force
+1 Trap Hole
+1 Graceful Charity

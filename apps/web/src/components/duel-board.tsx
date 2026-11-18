@@ -1,15 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type {
-  Action,
-  CardInfo,
-  ClientMessage,
-  GameEvent,
-  GameView,
-  MonsterView,
-  ServerMessage,
-} from "@golden-era/duel-engine";
+import type { Action, CardInfo, ClientMessage, GameEvent, GameView, MonsterView, PlayerView, ServerMessage, SupportInfo } from "@golden-era/duel-engine";
+
+import { factsOf, PendingPanel, POSITION_NAMES, RevealOverlay, type Match, type Reveal } from "./duel-parts";
 
 const STAR_NAMES: Record<string, string> = {
   sun: "Sol",
@@ -24,21 +18,20 @@ const STAR_NAMES: Record<string, string> = {
   neptune: "Netuno",
 };
 
-const POSITION_NAMES = { attack: "ataque", defense: "defesa", facedown: "virada" } as const;
-
 type Phase = "lobby" | "connecting" | "waiting" | "playing" | "closed";
 
-interface Match {
-  room: string;
-  you: 0 | 1;
-  opponent: string;
-  cards: Record<number, CardInfo>;
+/** Efeito visual curto numa zona (`jogador:zona`) ou na vida (`lp:jogador`). */
+interface Fx {
+  id: number;
+  kind: "attack" | "summon" | "ghost" | "damage" | "heal";
+  cardId?: number;
+  text?: string;
 }
 
 /** Texto de uma linha do histórico, na visão de quem lê. */
-function describe(e: GameEvent, you: number, cards: Record<number, CardInfo>, foe: string): string {
+function describe(e: GameEvent, you: number, cards: Record<number, CardInfo>, support: Record<number, SupportInfo>, foe: string): string {
   const who = (p: number) => (p === you ? "Você" : foe);
-  const name = (id: number) => (id < 0 ? "uma carta" : (cards[id]?.name ?? `#${id}`));
+  const name = (id: number) => (id < 0 ? "uma carta" : (cards[id]?.name ?? support[id]?.name ?? `#${id}`));
   switch (e.type) {
     case "draw":
       return e.player === you ? `Você comprou ${name(e.cardId)}.` : `${foe} comprou uma carta.`;
@@ -54,6 +47,24 @@ function describe(e: GameEvent, you: number, cards: Record<number, CardInfo>, fo
       return `${who(e.player)} perdeu ${e.amount} LP (restam ${e.lp}).`;
     case "destroyed":
       return `${name(e.cardId)} de ${who(e.player)} foi destruída.`;
+    case "spell":
+      return `${who(e.player)} usou a magia ${name(e.cardId)}.`;
+    case "set":
+      return e.player === you ? `Você pôs ${name(e.cardId)} virada.` : `${foe} pôs uma carta virada.`;
+    case "trap":
+      return `${who(e.player)} ativou a armadilha ${name(e.cardId)}!`;
+    case "effect":
+      return `${who(e.player)} ativou o efeito de ${name(e.cardId)}.`;
+    case "sacrifice":
+      return `${who(e.player)} sacrificou ${name(e.cardId)}.`;
+    case "revive":
+      return `${who(e.player)} trouxe ${name(e.cardId)} de volta ao campo.`;
+    case "toHand":
+      return `${name(e.cardId)} voltou para a mão de ${e.player === you ? "você" : foe}.`;
+    case "heal":
+      return `${who(e.player)} recuperou ${e.amount} LP (agora ${e.lp}).`;
+    case "negate":
+      return "O ataque foi anulado.";
     case "turn":
       return `Turno ${e.turn}: vez de ${e.player === you ? "você" : foe}.`;
     case "end":
@@ -61,11 +72,57 @@ function describe(e: GameEvent, you: number, cards: Record<number, CardInfo>, fo
   }
 }
 
-export function DuelBoard({ wsUrl, imageBase }: { wsUrl: string; imageBase: string }) {
+/** Anúncios (carta grande no meio da mesa) para os eventos que o adversário precisa ver. */
+function revealsFor(events: GameEvent[], m: Match, nextKey: () => number): Reveal[] {
+  const out: Reveal[] = [];
+  const who = (p: number) => (p === m.you ? "Você" : m.opponent);
+  for (const e of events) {
+    let title: string;
+    let kind: Reveal["kind"];
+    if (e.type === "spell") {
+      title = `${who(e.player)} usou a magia`;
+      kind = "spell";
+    } else if (e.type === "trap") {
+      title = `${who(e.player)} ativou a armadilha`;
+      kind = "trap";
+    } else if (e.type === "effect") {
+      title = `${who(e.player)} ativou o efeito de`;
+      kind = "effect";
+    } else if (e.type === "revive") {
+      title = `${who(e.player)} trouxe de volta`;
+      kind = "revive";
+    } else if (e.type === "flip") {
+      title = "Carta virada para cima";
+      kind = "flip";
+    } else {
+      continue;
+    }
+    if (e.cardId < 0) continue;
+    const f = factsOf(m, e.cardId);
+    out.push({ key: nextKey(), id: e.cardId, title, name: f.name, text: f.text ?? "", kind });
+  }
+  return out;
+}
+
+/** Efeitos visuais curtos (ataque, invocação, destruição, dano e cura) para os eventos recebidos. */
+function fxFor(events: GameEvent[], nextId: () => number): Record<string, Fx> {
+  const out: Record<string, Fx> = {};
+  for (const e of events) {
+    if (e.type === "attack") out[`${e.player}:${e.zone}`] = { id: nextId(), kind: "attack" };
+    else if (e.type === "play" || e.type === "revive") out[`${e.player}:${e.zone}`] = { id: nextId(), kind: "summon" };
+    else if ((e.type === "destroyed" || e.type === "sacrifice") && e.cardId >= 0) out[`${e.player}:${e.zone}`] = { id: nextId(), kind: "ghost", cardId: e.cardId };
+    else if (e.type === "damage") out[`lp:${e.player}`] = { id: nextId(), kind: "damage", text: `−${e.amount}` };
+    else if (e.type === "heal") out[`lp:${e.player}`] = { id: nextId(), kind: "heal", text: `+${e.amount}` };
+  }
+  return out;
+}
+
+export function DuelBoard({ wsUrl, imageBase, decks }: { wsUrl: string; imageBase: string; decks: { id: string; name: string }[] }) {
   const wsRef = useRef<WebSocket | null>(null);
   const [phase, setPhase] = useState<Phase>("lobby");
   const [error, setError] = useState<string | null>(null);
   const [code, setCode] = useState("");
+  const [deckId, setDeckId] = useState(""); // vazio = baralho aleatório
   const [room, setRoom] = useState<string | null>(null);
   const [match, setMatch] = useState<Match | null>(null);
   const [view, setView] = useState<GameView | null>(null);
@@ -74,15 +131,59 @@ export function DuelBoard({ wsUrl, imageBase }: { wsUrl: string; imageBase: stri
   const [foeOnline, setFoeOnline] = useState(true);
   const [picked, setPicked] = useState<number[]>([]); // índices da mão, na ordem do clique
   const [zone, setZone] = useState<number | null>(null); // monstro próprio selecionado
+  const [sacZone, setSacZone] = useState<number | null>(null); // monstro próprio a sacrificar (campo cheio)
+  const [inspect, setInspect] = useState<number | null>(null); // carta mostrada em detalhe ao passar o mouse
+  const [graveOf, setGraveOf] = useState<0 | 1 | null>(null); // cemitério aberto (índice absoluto do jogador)
+  const [reveal, setReveal] = useState<Reveal | null>(null);
+  const [fx, setFx] = useState<Record<string, Fx>>({});
   // O handler do WebSocket vive mais que a renderização; ele lê o que precisa por aqui.
   const matchRef = useRef<Match | null>(null);
+  const counter = useRef(0);
+  const queue = useRef<Reveal[]>([]);
+  const showing = useRef(false);
 
-  async function connect(joinRoom?: string) {
+  const nextId = () => ++counter.current;
+
+  /** Mostra os anúncios um depois do outro (cada um fica uns segundos na tela). */
+  function pump() {
+    if (showing.current) return;
+    const item = queue.current.shift();
+    if (!item) return;
+    showing.current = true;
+    setReveal(item);
+    setTimeout(
+      () => {
+        setReveal(null);
+        showing.current = false;
+        pump();
+      },
+      item.kind === "flip" ? 1400 : 2600,
+    );
+  }
+
+  function addFx(entries: Record<string, Fx>) {
+    const keys = Object.keys(entries);
+    if (keys.length === 0) return;
+    setFx((old) => ({ ...old, ...entries }));
+    setTimeout(() => {
+      setFx((old) => {
+        const next = { ...old };
+        for (const k of keys) if (next[k]?.id === entries[k]!.id) delete next[k];
+        return next;
+      });
+    }, 1300);
+  }
+
+  async function connect(joinRoom?: string, bot = false) {
     setError(null);
     setPhase("connecting");
     let ticket: string;
     try {
-      const res = await fetch("/duel/ticket", { method: "POST" });
+      const res = await fetch("/duel/ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deckId: deckId || undefined }),
+      });
       const body = (await res.json()) as { ticket?: string; error?: string };
       if (!res.ok || !body.ticket) throw new Error(body.error ?? "não foi possível entrar");
       ticket = body.ticket;
@@ -95,7 +196,7 @@ export function DuelBoard({ wsUrl, imageBase }: { wsUrl: string; imageBase: stri
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
     ws.onopen = () => {
-      const msg: ClientMessage = { type: "join", ticket, room: joinRoom };
+      const msg: ClientMessage = { type: "join", ticket, room: joinRoom, bot };
       ws.send(JSON.stringify(msg));
     };
     ws.onmessage = (ev) => {
@@ -106,7 +207,7 @@ export function DuelBoard({ wsUrl, imageBase }: { wsUrl: string; imageBase: stri
           setPhase("waiting");
           break;
         case "start": {
-          const m = { room: msg.room, you: msg.you, opponent: msg.opponent, cards: msg.cards };
+          const m = { room: msg.room, you: msg.you, opponent: msg.opponent, cards: msg.cards, support: msg.support, deck: msg.deck };
           matchRef.current = m;
           setMatch(m);
           setRoom(msg.room);
@@ -119,9 +220,13 @@ export function DuelBoard({ wsUrl, imageBase }: { wsUrl: string; imageBase: stri
           setLegal(msg.legal);
           setPicked([]);
           setZone(null);
+          setSacZone(null);
           if (m) {
-            const lines = msg.events.map((e) => describe(e, m.you, m.cards, m.opponent));
-            if (lines.length) setLog((old) => [...old, ...lines].slice(-60));
+            const lines = msg.events.map((e) => describe(e, m.you, m.cards, m.support, m.opponent));
+            if (lines.length) setLog((old) => [...old, ...lines].slice(-80));
+            queue.current.push(...revealsFor(msg.events, m, nextId));
+            pump();
+            addFx(fxFor(msg.events, nextId));
           }
           break;
         }
@@ -149,6 +254,8 @@ export function DuelBoard({ wsUrl, imageBase }: { wsUrl: string; imageBase: stri
     wsRef.current = null;
     ws?.close();
     matchRef.current = null;
+    queue.current = [];
+    showing.current = false;
     setMatch(null);
     setView(null);
     setLegal([]);
@@ -156,6 +263,11 @@ export function DuelBoard({ wsUrl, imageBase }: { wsUrl: string; imageBase: stri
     setRoom(null);
     setPicked([]);
     setZone(null);
+    setSacZone(null);
+    setInspect(null);
+    setGraveOf(null);
+    setReveal(null);
+    setFx({});
     setError(null);
     setPhase("lobby");
   }
@@ -164,7 +276,27 @@ export function DuelBoard({ wsUrl, imageBase }: { wsUrl: string; imageBase: stri
     return (
       <section className="duel-lobby">
         {error ? <p role="alert" className="duel-error">{error}</p> : null}
-        <button className="button" disabled={phase === "connecting"} onClick={() => connect()}>
+        <div className="duel-deckpick">
+          <label>
+            Baralho
+            <select value={deckId} onChange={(e) => setDeckId(e.target.value)} disabled={phase === "connecting"}>
+              <option value="">Aleatório</option>
+              {decks.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="muted">
+            O duelo usa os monstros e as magias/armadilhas que o modo conhece; fusões, Extra Deck e o resto do deck ficam de
+            fora, e o que faltar para 40 cartas é completado ao acaso.
+          </p>
+        </div>
+        <button className="button" disabled={phase === "connecting"} onClick={() => connect(undefined, true)}>
+          Jogar contra o bot
+        </button>
+        <button className="button ghost" disabled={phase === "connecting"} onClick={() => connect()}>
           Criar sala
         </button>
         <form
@@ -208,18 +340,33 @@ export function DuelBoard({ wsUrl, imageBase }: { wsUrl: string; imageBase: stri
     );
   }
 
+  const foeIdx: 0 | 1 = match.you === 0 ? 1 : 0;
   const me = view.players[match.you];
-  const foe = view.players[match.you === 0 ? 1 : 0];
-  const myTurn = view.current === match.you && view.winner === null;
-  const card = (id: number | null) => (id === null ? null : match.cards[id]);
+  const foe = view.players[foeIdx];
+  const pend = view.pending;
+  const canAct = view.actor === match.you && view.winner === null;
+  const myTurn = canAct && pend === null; // jogadas normais; com algo pendente só responder/escolher
+  const nameOf = (id: number | null) => (id === null ? "carta virada" : factsOf(match, id).name);
   const art = (id: number) => `${imageBase}/cards_small/${id}.jpg`;
+  const bigArt = (id: number) => `${imageBase}/cards/${id}.jpg`;
+  const inspectProps = (id: number | null) =>
+    id === null
+      ? {}
+      : { onMouseEnter: () => setInspect(id), onFocus: () => setInspect(id) };
 
   const hand = me.hand ?? [];
   // Jogadas legais que começam com a seleção atual; servem para destacar o que ainda dá para somar à fusão.
   const plays = legal.filter((a): a is Extract<Action, { type: "play" }> => a.type === "play");
   const prefixOf = (a: Extract<Action, { type: "play" }>) => picked.every((p, i) => a.hand[i] === p);
   const nextOk = new Set(plays.filter((a) => prefixOf(a) && a.hand.length > picked.length).map((a) => a.hand[picked.length]!));
-  const exact = plays.filter((a) => a.hand.length === picked.length && picked.every((p, i) => a.hand[i] === p));
+  /** Ação de magia/armadilha da mão para a carta do índice `i` (a lista legal traz uma por carta distinta). */
+  const supportActionFor = (i: number) =>
+    legal.find((a): a is Extract<Action, { type: "spell" | "setTrap" }> => (a.type === "spell" || a.type === "setTrap") && hand[a.hand] === hand[i]);
+  const supportPicked = picked.length === 1 && match.support[hand[picked[0]!]!] ? supportActionFor(picked[0]!) : undefined;
+  const exactAll = plays.filter((a) => a.hand.length === picked.length && picked.every((p, i) => a.hand[i] === p));
+  // Com o campo cheio cada jogada exige sacrificar um monstro seu: o jogador escolhe clicando nele no campo.
+  const needsSacrifice = exactAll.some((a) => a.sacrifice !== undefined);
+  const exact = needsSacrifice ? (sacZone === null ? [] : exactAll.filter((a) => a.sacrifice === sacZone)) : exactAll;
 
   const playLabel = (a: Extract<Action, { type: "play" }>) => {
     const first = hand[a.hand[0]!];
@@ -230,25 +377,34 @@ export function DuelBoard({ wsUrl, imageBase }: { wsUrl: string; imageBase: stri
 
   const zoneActions = zone === null ? [] : legal.filter((a) => (a.type === "attack" || a.type === "changePosition") && a.zone === zone);
 
-  const monster = (m: MonsterView | null, i: number, mine: boolean) => {
-    const c = m ? card(m.cardId) : null;
-    const selected = mine && zone === i;
+  // ---- peças da mesa
+
+  const monster = (m: MonsterView | null, i: number, abs: 0 | 1) => {
+    const mine = abs === match.you;
+    const effect = fx[`${abs}:${i}`];
+    const c = m && m.cardId !== null ? match.cards[m.cardId] : null;
+    const selected = mine && (needsSacrifice ? sacZone === i : zone === i);
+    const cls = ["duel-zone", m ? `pos-${m.position}` : "empty", selected ? "selected" : "", effect && effect.kind !== "ghost" && effect.kind !== "damage" && effect.kind !== "heal" ? `fx-${effect.kind}` : ""];
     return (
       <button
-        key={i}
+        key={effect ? `${i}-${effect.id}` : i}
         type="button"
-        className={`duel-zone ${m ? `pos-${m.position}` : "empty"} ${selected ? "selected" : ""}`}
+        className={cls.join(" ")}
         disabled={!m || !mine || !myTurn}
-        onClick={() => setZone(selected ? null : i)}
+        onClick={() => (needsSacrifice ? setSacZone(selected ? null : i) : setZone(selected ? null : i))}
         aria-label={m ? `${mine ? "seu" : "do oponente"} monstro, zona ${i + 1}` : `zona ${i + 1} vazia`}
+        {...inspectProps(m?.cardId ?? null)}
       >
         {m ? (
           m.cardId === null ? (
             <span className="duel-back" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={art(m.cardId)} alt={c?.name ?? ""} width={118} height={172} />
+            <img src={art(m.cardId)} alt={nameOf(m.cardId)} width={118} height={172} />
           )
+        ) : effect?.kind === "ghost" && effect.cardId !== undefined ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="duel-ghost" src={art(effect.cardId)} alt="" width={118} height={172} />
         ) : null}
         {m && c ? (
           <span className="duel-stats">
@@ -260,89 +416,222 @@ export function DuelBoard({ wsUrl, imageBase }: { wsUrl: string; imageBase: stri
     );
   };
 
+  const trapRow = (p: PlayerView, abs: 0 | 1) => (
+    <div className="duel-traps" aria-label={abs === match.you ? "Suas armadilhas" : "Armadilhas do oponente"}>
+      {p.traps.map((t, i) => (
+        <span
+          key={i}
+          className={`duel-trap ${t ? "set" : "empty"}`}
+          title={t?.cardId != null ? nameOf(t.cardId) : t ? "Armadilha virada" : undefined}
+          {...inspectProps(t?.cardId ?? null)}
+        >
+          {t?.cardId != null ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={art(t.cardId)} alt={nameOf(t.cardId)} width={56} height={82} />
+          ) : t ? (
+            <span className="duel-back" />
+          ) : null}
+        </span>
+      ))}
+    </div>
+  );
+
+  const playerBar = (p: PlayerView, abs: 0 | 1) => {
+    const mine = abs === match.you;
+    const lpFx = fx[`lp:${abs}`];
+    const pct = Math.max(0, Math.min(100, (p.lp / 8000) * 100));
+    return (
+      <div className={`duel-bar ${mine ? "me" : "foe"}`}>
+        <div className="duel-bar-name">
+          <strong>{mine ? "Você" : match.opponent}</strong>
+          {!mine && !foeOnline ? <span className="muted"> (desconectado)</span> : null}
+        </div>
+        <div className="duel-lp" role="meter" aria-valuemin={0} aria-valuemax={8000} aria-valuenow={p.lp} aria-label={`Vida de ${mine ? "você" : match.opponent}`}>
+          <span className={`duel-lp-fill ${pct < 25 ? "low" : ""}`} style={{ width: `${pct}%` }} />
+          <span className="duel-lp-text">{p.lp} LP</span>
+          {lpFx ? (
+            <span key={lpFx.id} className={`duel-float ${lpFx.kind}`}>
+              {lpFx.text}
+            </span>
+          ) : null}
+        </div>
+        <div className="duel-piles">
+          <span title="Cartas na mão">✋ {p.handCount}</span>
+          <span title="Cartas no baralho">🂠 {p.deckCount}</span>
+          <button type="button" className="duel-pile-button" onClick={() => setGraveOf(abs)} title="Ver o cemitério">
+            ☠ {p.graveyard.length}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const inspected = inspect !== null ? factsOf(match, inspect) : null;
+  const statusText = pend ? (canAct ? "Sua resposta" : `Aguardando ${match.opponent}…`) : myTurn ? "Sua vez" : `Vez de ${match.opponent}`;
+
   return (
     <section className="duel">
       <header className="duel-head">
         <span>
           Sala <strong className="duel-code">{match.room}</strong> · contra <strong>{match.opponent}</strong>
-          {foeOnline ? "" : " (desconectado)"}
         </span>
+        {match.deck ? (
+          <span className="muted duel-deckinfo">
+            Baralho: <strong>{match.deck.name}</strong> · {match.deck.used} cartas do deck
+            {match.deck.ignored ? `, ${match.deck.ignored} ignoradas` : ""}
+            {match.deck.filled ? `, ${match.deck.filled} sorteadas` : ""}
+          </span>
+        ) : null}
         <button className="button ghost" onClick={leave}>Sair</button>
       </header>
-
-      {view.winner !== null ? (
-        <p className="duel-result">
-          {view.winner === "draw" ? "Empate" : view.winner === match.you ? "Você venceu!" : `${match.opponent} venceu.`} {view.reason}
-        </p>
-      ) : (
-        <p className={myTurn ? "duel-turn mine" : "duel-turn"}>{myTurn ? "Sua vez" : `Vez de ${match.opponent}`} · turno {view.turn}</p>
-      )}
       {error ? <p role="alert" className="duel-error">{error}</p> : null}
 
-      <div className="duel-side">
-        <span>{match.opponent}: <strong>{foe.lp} LP</strong></span>
-        <span className="muted">mão {foe.handCount} · baralho {foe.deckCount}</span>
-      </div>
-      <div className="duel-row">{foe.field.map((m, i) => monster(m, i, false))}</div>
-      <div className="duel-row">{me.field.map((m, i) => monster(m, i, true))}</div>
-      <div className="duel-side">
-        <span>Você: <strong>{me.lp} LP</strong></span>
-        <span className="muted">baralho {me.deckCount}</span>
-      </div>
+      <div className="duel-layout">
+        <div className="duel-stage">
+          <div className="duel-mat foe-side">
+            <div className="duel-foe-hand" aria-hidden="true">
+              {Array.from({ length: Math.min(foe.handCount, 8) }, (_, i) => (
+                <span key={i} className="duel-back mini" />
+              ))}
+            </div>
+            {playerBar(foe, foeIdx)}
+            {trapRow(foe, foeIdx)}
+            <div className="duel-row">{foe.field.map((m, i) => monster(m, i, foeIdx))}</div>
+          </div>
 
-      {zoneActions.length ? (
-        <div className="duel-actions">
-          {zoneActions.map((a, i) => (
-            <button key={i} className="button" onClick={() => act(a)}>
-              {a.type === "attack"
-                ? a.target === "direct"
-                  ? "Atacar direto"
-                  : `Atacar a zona ${a.target + 1}`
-                : `Mudar para ${POSITION_NAMES[(a as Extract<Action, { type: "changePosition" }>).position]}`}
-            </button>
-          ))}
-        </div>
-      ) : null}
+          <div className={`duel-divider ${canAct ? "mine" : ""} ${view.winner !== null ? "over" : ""}`}>
+            {view.winner !== null ? (
+              <strong>
+                {view.winner === "draw" ? "Empate" : view.winner === match.you ? "Você venceu!" : `${match.opponent} venceu.`} {view.reason}
+              </strong>
+            ) : (
+              <>
+                <strong>{statusText}</strong>
+                <span className="muted">
+                  turno {view.turn}
+                  {myTurn && view.spellUsed ? " · magia do turno já usada" : ""}
+                </span>
+              </>
+            )}
+          </div>
 
-      <div className="duel-hand">
-        {hand.map((id, i) => {
-          const on = picked.includes(i);
-          const usable = myTurn && (on || (picked.length === 0 ? plays.some((a) => a.hand[0] === i) : nextOk.has(i)));
-          return (
-            <button
-              key={i}
-              type="button"
-              className={`duel-card ${on ? "selected" : ""}`}
-              disabled={!usable}
-              title={`${match.cards[id]?.name ?? id}${match.cards[id] ? ` · ${match.cards[id].atk}/${match.cards[id].def}` : ""}`}
-              onClick={() => setPicked(on ? picked.filter((p) => p !== i) : [...picked, i])}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={art(id)} alt={match.cards[id]?.name ?? ""} width={118} height={172} />
-              <span className="duel-stats">{match.cards[id]?.atk}/{match.cards[id]?.def}</span>
-            </button>
-          );
-        })}
-      </div>
+          <div className="duel-mat me-side">
+            <div className="duel-row">{me.field.map((m, i) => monster(m, i, match.you))}</div>
+            {trapRow(me, match.you)}
+            {playerBar(me, match.you)}
+          </div>
 
-      {myTurn ? (
-        <div className="duel-actions">
-          {exact.map((a, i) => (
-            <button key={i} className="button" onClick={() => act(a)}>
-              {a.hand.length > 1 ? "Fundir" : "Jogar"} · {playLabel(a)}
-            </button>
-          ))}
-          {picked.length > 0 ? (
-            <button className="button ghost" onClick={() => setPicked([])}>Limpar seleção</button>
+          <PendingPanel view={view} match={match} legal={legal} imageBase={imageBase} onAct={act} onInspect={setInspect} />
+
+          {zoneActions.length ? (
+            <div className="duel-actions">
+              {zoneActions.map((a, i) => (
+                <button key={i} className="button" onClick={() => act(a)}>
+                  {a.type === "attack"
+                    ? a.target === "direct"
+                      ? "Atacar direto"
+                      : `Atacar a zona ${a.target + 1}`
+                    : `Mudar para ${POSITION_NAMES[(a as Extract<Action, { type: "changePosition" }>).position]}`}
+                </button>
+              ))}
+            </div>
           ) : null}
-          <button className="button ghost" onClick={() => act({ type: "endTurn" })}>Encerrar turno</button>
+
+          <div className="duel-hand">
+            {hand.map((id, i) => {
+              const on = picked.includes(i);
+              const sup = match.support[id];
+              const usable = myTurn && (on || (picked.length === 0 ? plays.some((a) => a.hand[0] === i) || supportActionFor(i) !== undefined : nextOk.has(i)));
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className={`duel-card ${on ? "selected" : ""} ${sup ? sup.kind : ""}`}
+                  disabled={!usable}
+                  onClick={() => {
+                    setSacZone(null);
+                    setPicked(on ? picked.filter((p) => p !== i) : [...picked, i]);
+                  }}
+                  {...inspectProps(id)}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={art(id)} alt={nameOf(id)} width={118} height={172} />
+                  <span className="duel-stats">{sup ? (sup.kind === "spell" ? "Magia" : "Armadilha") : `${match.cards[id]?.atk}/${match.cards[id]?.def}`}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {myTurn ? (
+            <div className="duel-actions">
+              {exact.map((a, i) => (
+                <button key={i} className="button" onClick={() => act(a)}>
+                  {a.hand.length > 1 ? "Fundir" : "Jogar"} · {playLabel(a)}
+                  {a.sacrifice !== undefined ? ` · sacrificando ${nameOf(me.field[a.sacrifice]?.cardId ?? null)}` : ""}
+                </button>
+              ))}
+              {supportPicked ? (
+                <button className="button" onClick={() => act(supportPicked)}>
+                  {supportPicked.type === "spell" ? "Usar magia" : "Pôr a armadilha virada"} · {nameOf(hand[picked[0]!]!)}
+                </button>
+              ) : null}
+              {picked.length > 0 ? (
+                <button className="button ghost" onClick={() => { setPicked([]); setSacZone(null); }}>Limpar seleção</button>
+              ) : null}
+              <button className="button ghost" onClick={() => act({ type: "endTurn" })}>Encerrar turno</button>
+            </div>
+          ) : null}
+          {myTurn && needsSacrifice && sacZone === null ? (
+            <p className="muted duel-hint">Campo cheio: clique em um dos seus monstros para sacrificá-lo e dar lugar à carta.</p>
+          ) : null}
+          {myTurn && picked.length === 1 && nextOk.size > 0 ? <p className="muted duel-hint">Escolha outra carta da mão para tentar uma fusão.</p> : null}
+        </div>
+
+        <aside className="duel-aside">
+          <div className="duel-inspector" aria-live="polite">
+            {inspected ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={bigArt(inspected.id)} alt={inspected.name} width={240} />
+                <h3>{inspected.name}</h3>
+                <p className="muted">{inspected.kind}{inspected.stats ? ` · ${inspected.stats}` : ""}</p>
+                {inspected.text ? <p>{inspected.text}</p> : null}
+              </>
+            ) : (
+              <p className="muted">Passe o mouse sobre uma carta para ver os detalhes.</p>
+            )}
+          </div>
+          <ol className="duel-log" aria-label="Histórico">
+            {log.slice().reverse().map((l, i) => <li key={i}>{l}</li>)}
+          </ol>
+        </aside>
+      </div>
+
+      {reveal ? <RevealOverlay reveal={reveal} imageBase={imageBase} /> : null}
+
+      {graveOf !== null ? (
+        <div className="duel-modal" role="dialog" aria-label="Cemitério" onClick={() => setGraveOf(null)}>
+          <div className="duel-modal-box" onClick={(e) => e.stopPropagation()}>
+            <header>
+              <strong>Cemitério {graveOf === match.you ? "seu" : `de ${match.opponent}`}</strong>
+              <button className="button ghost small" onClick={() => setGraveOf(null)}>Fechar</button>
+            </header>
+            {view.players[graveOf].graveyard.length === 0 ? (
+              <p className="muted">Vazio.</p>
+            ) : (
+              <ul className="duel-grave">
+                {view.players[graveOf].graveyard.map((id, i) => (
+                  <li key={i} {...inspectProps(id)}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={art(id)} alt={nameOf(id)} width={90} height={131} />
+                    <span>{nameOf(id)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       ) : null}
-      {myTurn && picked.length === 1 && nextOk.size > 0 ? <p className="muted">Escolha outra carta da mão para tentar uma fusão.</p> : null}
-
-      <ol className="duel-log" aria-label="Histórico">
-        {log.slice().reverse().map((l, i) => <li key={i}>{l}</li>)}
-      </ol>
     </section>
   );
 }

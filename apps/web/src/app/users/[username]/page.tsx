@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { AnimeDecks } from "@/components/anime-decks";
 import { DeckList } from "@/components/deck-list";
 import { Pager, withQuery } from "@/components/pager";
 import { api, describeError } from "@/lib/api";
@@ -65,13 +67,21 @@ async function Profile({ params, searchParams }: { params: Params; searchParams:
         </div>
       </div>
       <h2>{isMe ? "Meus decks" : "Decks públicos"}</h2>
+      {isMe ? (
+        <p>
+          <Link href="/decks/new" className="button">
+            + Novo deck
+          </Link>
+        </p>
+      ) : null}
       {decks?.items.length ? (
         <DeckList decks={decks.items} showVisibility={isMe} />
       ) : (
         <p className="muted">{isMe ? "Você ainda não tem decks." : "Este usuário ainda não publicou decks."}</p>
       )}
-      {isMe ? <p className="muted">Rascunhos privados só aparecem para você. Para montar ou editar decks, use o app Golden Era.</p> : null}
+      {isMe ? <p className="muted">Rascunhos privados só aparecem para você. Abra um deck para editá-lo.</p> : null}
       <Pager nextHref={decks?.nextCursor ? withQuery(`/users/${username}`, { cursor: decks.nextCursor }) : null} />
+      {isMe ? <AnimeDecks /> : null}
     </>
   );
 }

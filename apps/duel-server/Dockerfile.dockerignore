@@ -1,0 +1,26 @@
+﻿# Usado só pelo apps/duel-server/Dockerfile (contexto = raiz do repositório).
+.git
+.data
+.env
+.env.*
+node_modules
+**/node_modules
+**/.next
+**/dist
+**/.expo
+cmd
+internal
+migrations
+api
+*.go
+go.mod
+go.sum
+docker-compose.yml
+Dockerfile
+*.md
+apps/web/**
+!apps/web/package.json
+apps/mobile/**
+!apps/mobile/package.json
+apps/duel-server/scripts
+apps/duel-server/**/*.test.ts

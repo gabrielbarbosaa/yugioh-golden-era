@@ -1,0 +1,27 @@
+# Lista aproximada montada a partir do anime (era Duel Monsters); cartas que não existem no catálogo da era vão para missing.
+slug: mai
+personagem: Mai Valentine
+serie: Reino dos Duelistas / Battle City
+descricao: O deck de Harpias de Mai: bando de aves guerreiras com apoio de magias e armadilhas de controle.
+capa: Harpie Lady
+
+3 Harpie Lady
+1 Harpie Lady Sisters
+1 Harpie's Pet Dragon
+1 Harpie's Brother
+1 Cyber Harpie
+1 Elegant Egotist
+1 Hysteric Fairy
+1 Shining Angel
+1 Mystical Elf
+1 Amazon Archer
+1 Harpie's Feather Duster
+1 Cyber Shield
+1 Monster Reborn
+1 Pot of Greed
+1 Swords of Revealing Light
+1 Mirror Force
+1 Trap Hole
+1 Magic Jammer
+1 Dust Tornado
+1 Rainbow Flower

@@ -1,5 +1,6 @@
+import { MONSTER_EFFECTS, SPELLS, TRAPS } from "./effects.ts";
 import { assignStars } from "./stars.ts";
-import type { Card, Recipe, Rules } from "./types.ts";
+import type { Card, MonsterEffectKey, Recipe, Rules, SupportCard } from "./types.ts";
 
 /** Formato do arquivo `data/fm-pool.json` (gerado por `scripts/build-pool.ts`). Estrelas e custo são derivados ao carregar. */
 export interface PoolData {
@@ -14,6 +15,8 @@ export interface PoolData {
     race: string | null;
   }[];
   recipes: Recipe[];
+  /** Magias e armadilhas do catálogo que o modo conhece (as que têm efeito em effects.ts). */
+  support?: { id: number; name: string; kind: "spell" | "trap" }[];
 }
 
 export const DEFAULT_SETTINGS = {
@@ -23,6 +26,7 @@ export const DEFAULT_SETTINGS = {
   deckSize: 40,
   maxTurns: 80,
   starBonus: 500,
+  trapZones: 3,
 } as const;
 
 /**
@@ -35,7 +39,7 @@ export function cardCost(c: { atk: number; def: number; level: number }): number
 
 export const recipeKey = (ids: readonly number[]): string => [...ids].sort((a, b) => a - b).join(",");
 
-export function buildRules(data: PoolData, overrides: Partial<Omit<Rules, "cards" | "recipes" | "recipeIndex">> = {}): Rules {
+export function buildRules(data: PoolData, overrides: Partial<Omit<Rules, "cards" | "recipes" | "recipeIndex" | "support" | "monsterEffects">> = {}): Rules {
   const cards: Record<number, Card> = {};
   for (const c of data.cards) {
     cards[c.id] = { ...c, stars: assignStars(c.id, c.attribute), cost: cardCost(c) };
@@ -46,7 +50,17 @@ export function buildRules(data: PoolData, overrides: Partial<Omit<Rules, "cards
     const list = (recipeIndex[key] ??= []);
     if (!list.includes(r.result)) list.push(r.result);
   }
-  return { cards, recipes: data.recipes, recipeIndex, ...DEFAULT_SETTINGS, ...overrides };
+  const support: Record<number, SupportCard> = {};
+  for (const s of data.support ?? []) {
+    const effect = s.kind === "spell" ? SPELLS[s.name] : TRAPS[s.name];
+    if (effect) support[s.id] = { id: s.id, name: s.name, kind: s.kind, effect };
+  }
+  const monsterEffects: Record<number, MonsterEffectKey> = {};
+  for (const c of data.cards) {
+    const key = MONSTER_EFFECTS[c.name];
+    if (key) monsterEffects[c.id] = key;
+  }
+  return { cards, recipes: data.recipes, recipeIndex, support, monsterEffects, ...DEFAULT_SETTINGS, ...overrides };
 }
 
 /**
@@ -97,15 +111,15 @@ export function validateDeck(rules: Rules, deck: readonly number[], costCap: num
   const copies = new Map<number, number>();
   for (const id of deck) {
     const card = rules.cards[id];
-    if (!card) {
+    if (!card && !rules.support[id]) {
       issues.push(`a carta ${id} não existe no catálogo do modo`);
       continue;
     }
-    if (card.fusion) issues.push(`${card.name} é uma fusão e não pode ficar no baralho`);
+    if (card?.fusion) issues.push(`${card.name} é uma fusão e não pode ficar no baralho`);
     copies.set(id, (copies.get(id) ?? 0) + 1);
   }
   for (const [id, n] of copies) {
-    if (n > 3) issues.push(`${rules.cards[id]?.name ?? id} aparece ${n} vezes (máximo 3)`);
+    if (n > 3) issues.push(`${rules.cards[id]?.name ?? rules.support[id]?.name ?? id} aparece ${n} vezes (máximo 3)`);
   }
   if (costCap !== null) {
     const cost = deckCost(rules, deck);

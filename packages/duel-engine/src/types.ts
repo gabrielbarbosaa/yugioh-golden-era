@@ -34,6 +34,20 @@ export interface Card {
   cost: number;
 }
 
+/** Efeitos de magia/armadilha/monstro implementados (veja effects.ts). */
+export type SpellKey = "darkHole" | "raigeki" | "potOfGreed" | "monsterReborn" | "fissure" | "ookazi" | "hinotama" | "dianKeto";
+export type TrapKey = "mirrorForce" | "magicCylinder" | "negateAttack";
+export type MonsterEffectKey = "manEaterBug" | "haneHane" | "magicianOfFaith" | "kuriboh";
+export type EffectKey = SpellKey | TrapKey | MonsterEffectKey;
+
+/** Magia ou armadilha do modo: vai na mão e no baralho junto dos monstros, com um efeito fixo. */
+export interface SupportCard {
+  id: number;
+  name: string;
+  kind: "spell" | "trap";
+  effect: SpellKey | TrapKey;
+}
+
 /** Receita de fusão: os materiais (em qualquer ordem) geram `result`. */
 export interface Recipe {
   result: number;
@@ -53,6 +67,12 @@ export interface Rules {
   maxTurns: number;
   /** Bônus/penalidade de ATK/DEF por vantagem de estrela na batalha. */
   starBonus: number;
+  /** Quantas armadilhas viradas cada jogador pode manter em campo. */
+  trapZones: number;
+  /** Magias e armadilhas jogáveis, por id. */
+  support: Record<number, SupportCard>;
+  /** Efeitos de monstros (por id da carta): viram ao ser revelado (flip) ou saem da mão (Kuriboh). */
+  monsterEffects: Record<number, MonsterEffectKey>;
 }
 
 export interface MonsterOnField {
@@ -71,8 +91,28 @@ export interface PlayerState {
   deck: number[];
   hand: number[];
   field: (MonsterOnField | null)[];
+  /** Armadilhas viradas para baixo (id da carta, ou `null` se a zona está vazia). */
+  traps: (number | null)[];
   graveyard: number[];
 }
+
+/** Uma posição do campo de monstros. */
+export interface FieldRef {
+  side: PlayerIndex;
+  zone: number;
+}
+
+/** Alvo de uma escolha: um monstro em campo ou uma carta do cemitério (índice em `graveyard`). */
+export type Choice = ({ kind: "field" } & FieldRef) | { kind: "grave"; side: PlayerIndex; index: number };
+
+/**
+ * Algo que interrompe o fluxo normal do turno: quem age passa a ser `pending.player` (veja `actorOf`).
+ * - `respond`: um ataque foi declarado e o defensor pode usar uma armadilha virada ou o Kuriboh da mão (ou deixar passar);
+ * - `choose`: um efeito pede que `player` escolha um alvo entre `options`.
+ */
+export type Pending =
+  | { type: "respond"; player: PlayerIndex; attacker: FieldRef; target: number | "direct" }
+  | { type: "choose"; player: PlayerIndex; effect: "monsterReborn" | "manEaterBug" | "haneHane"; options: Choice[] };
 
 export interface GameState {
   /** Turno global, começando em 1 (os dois jogadores somam). */
@@ -80,6 +120,10 @@ export interface GameState {
   current: PlayerIndex;
   /** Já jogou (invocou/fundiu) neste turno. */
   played: boolean;
+  /** Já usou uma magia neste turno (uma por turno, além da jogada de monstro). */
+  spellUsed: boolean;
+  /** Resposta ou escolha em andamento; enquanto houver, só `actorOf(state)` pode agir. */
+  pending: Pending | null;
   players: [PlayerState, PlayerState];
   /** Estado do gerador pseudoaleatório (mulberry32): mesma semente, mesma partida. */
   rng: number;
@@ -96,6 +140,11 @@ export interface PlayAction {
   star: 0 | 1;
   /** Só quando os mesmos materiais geram mais de uma fusão: qual delas o jogador quer. */
   result?: number;
+  /**
+   * Zona do monstro próprio a sacrificar. Obrigatório quando o campo está cheio (a carta jogada entra no lugar dele e o
+   * sacrificado vai ao cemitério); proibido quando há zona livre.
+   */
+  sacrifice?: number;
 }
 
 export interface AttackAction {
@@ -115,7 +164,37 @@ export interface EndTurnAction {
   type: "endTurn";
 }
 
-export type Action = PlayAction | AttackAction | ChangePositionAction | EndTurnAction;
+/** Usa uma magia da mão (índice em `hand`). */
+export interface SpellAction {
+  type: "spell";
+  hand: number;
+}
+
+/** Põe uma armadilha da mão virada para baixo. */
+export interface SetTrapAction {
+  type: "setTrap";
+  hand: number;
+}
+
+/** Em resposta a um ataque: ativa a armadilha da zona `index` ou o monstro da mão `index` (Kuriboh). */
+export interface RespondAction {
+  type: "respond";
+  from: "trap" | "hand";
+  index: number;
+}
+
+/** Em resposta a um ataque: não faz nada e deixa o ataque acontecer. */
+export interface PassAction {
+  type: "pass";
+}
+
+/** Escolhe o alvo `index` de `pending.options`. */
+export interface ChooseAction {
+  type: "choose";
+  index: number;
+}
+
+export type Action = PlayAction | AttackAction | ChangePositionAction | EndTurnAction | SpellAction | SetTrapAction | RespondAction | PassAction | ChooseAction;
 
 export type GameEvent =
   | { type: "draw"; player: PlayerIndex; cardId: number }
@@ -125,6 +204,17 @@ export type GameEvent =
   | { type: "flip"; player: PlayerIndex; zone: number; cardId: number }
   | { type: "damage"; player: PlayerIndex; amount: number; lp: number }
   | { type: "destroyed"; player: PlayerIndex; zone: number; cardId: number }
+  | { type: "spell"; player: PlayerIndex; cardId: number }
+  | { type: "set"; player: PlayerIndex; zone: number; cardId: number }
+  | { type: "trap"; player: PlayerIndex; zone: number; cardId: number }
+  /** Efeito de monstro ativado (virar, ou o Kuriboh descartado). */
+  | { type: "effect"; player: PlayerIndex; cardId: number }
+  | { type: "revive"; player: PlayerIndex; zone: number; cardId: number }
+  /** Monstro sacrificado para dar lugar a uma jogada com o campo cheio. */
+  | { type: "sacrifice"; player: PlayerIndex; zone: number; cardId: number }
+  | { type: "toHand"; player: PlayerIndex; cardId: number }
+  | { type: "heal"; player: PlayerIndex; amount: number; lp: number }
+  | { type: "negate"; player: PlayerIndex }
   | { type: "turn"; player: PlayerIndex; turn: number }
   | { type: "end"; winner: PlayerIndex | "draw"; reason: string };
 

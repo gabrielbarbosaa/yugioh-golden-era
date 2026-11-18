@@ -1,0 +1,38 @@
+# Lista aproximada montada a partir do anime (era Duel Monsters); cartas que não existem no catálogo da era vão para missing.
+slug: yugi
+personagem: Yugi Muto
+serie: Reino dos Duelistas / Battle City
+descricao: O Rei dos Jogos: Mago Negro e Maga Negra à frente, com monstros de apoio, magias de controle e armadilhas clássicas.
+capa: Dark Magician
+
+1 Dark Magician
+1 Dark Magician Girl
+1 Summoned Skull
+1 Celtic Guardian
+1 Gaia The Fierce Knight
+1 Curse of Dragon
+1 Gaia the Dragon Champion
+1 Kuriboh
+1 Silver Fang
+1 Feral Imp
+1 Mystical Elf
+1 Beaver Warrior
+1 Giant Soldier of Stone
+1 Man-Eater Bug
+1 Magician of Faith
+1 Mammoth Graveyard
+1 Dian Keto the Cure Master
+1 Swords of Revealing Light
+1 Monster Reborn
+1 Pot of Greed
+1 Change of Heart
+1 Mystical Space Typhoon
+1 Mirror Force
+1 Trap Hole
+1 Magic Cylinder
+1 Dark Hole
+1 Harpie's Feather Duster
+1 Book of Secret Arts
+1 Legendary Sword
+1 Dragon Capture Jar
+1 Exchange of the Spirit

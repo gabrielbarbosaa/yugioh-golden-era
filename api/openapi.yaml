@@ -351,6 +351,50 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
+  /anime-decks:
+    get:
+      tags: [Decks]
+      operationId: listAnimeDecks
+      summary: Decks de personagens do anime (era Duel Monsters)
+      description: |
+        Listas aproximadas, montadas a partir do anime. Cartas do deck no anime que não existem no catálogo
+        da era vêm em `missing`.
+      security: []
+      responses:
+        '200':
+          description: Decks disponíveis
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AnimeDeck' }
+
+  /anime-decks/{slug}/import:
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        schema: { type: string, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' }
+    post:
+      tags: [Decks]
+      operationId: importAnimeDeck
+      summary: Copia um deck de personagem do anime para a conta como rascunho privado
+      description: |
+        Cria um deck privado do usuário. O servidor respeita a lista de proibidas/limitadas da era
+        (reduz as cópias, ou omite a carta proibida) e o Extra Deck; o que foi ajustado ou não existe
+        no catálogo é anotado na descrição do deck.
+      responses:
+        '201':
+          description: Deck criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deck'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /decks/{deckId}:
     parameters:
       - $ref: '#/components/parameters/DeckId'
@@ -957,6 +1001,27 @@ components:
         archetype: { type: string, nullable: true }
         visibility: { $ref: '#/components/schemas/DeckVisibility' }
         cards: { $ref: '#/components/schemas/DeckCards' }
+
+    AnimeDeck:
+      type: object
+      required: [slug, character, series, description, coverCardId, cardCount, missing]
+      properties:
+        slug: { type: string }
+        character: { type: string }
+        series: { type: string }
+        description: { type: string }
+        coverCardId: { type: integer, format: int64 }
+        coverImageUrl:
+          type: string
+          format: uri
+          nullable: true
+        cardCount:
+          type: integer
+          description: Cópias de cartas encontradas no catálogo da era
+        missing:
+          type: array
+          description: Cartas do deck no anime que não existem no catálogo da era
+          items: { type: string }
 
     DeckSummary:
       type: object

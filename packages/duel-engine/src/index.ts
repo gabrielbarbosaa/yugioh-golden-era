@@ -1,8 +1,10 @@
 export * from "./types.ts";
-export { applyAction, createGame, isLegal, legalActions, otherPlayer, resolveBattle, type BattleOutcome } from "./engine.ts";
+export { actorOf, applyAction, createGame, isLegal, legalActions, otherPlayer, resolveBattle, type BattleOutcome } from "./engine.ts";
 export { buildRules, cardCost, deckCost, DEFAULT_SETTINGS, recipeKey, fusionOptions, resolveFusion, validateDeck, type PoolData } from "./pool.ts";
 export { assignStars, starAdvantage } from "./stars.ts";
 export { makeRandom, nextRandom, shuffle } from "./rng.ts";
 export { greedyBot, randomBot, type Bot } from "./bots.ts";
-export type { CardInfo, ClientMessage, ServerMessage } from "./protocol.ts";
-export { eventsFor, HIDDEN_CARD, randomDeck, viewFor, type GameView, type MonsterView, type PlayerView } from "./view.ts";
+export type { CardInfo, ClientMessage, ServerMessage, SupportInfo } from "./protocol.ts";
+export { EFFECT_TEXT } from "./effects.ts";
+export { eventsFor, HIDDEN_CARD, randomDeck, viewFor, type GameView, type MonsterView, type PendingView, type PlayerView, type TrapView } from "./view.ts";
+export { buildDeck, type DeckEntry, type DeckReport } from "./deck.ts";

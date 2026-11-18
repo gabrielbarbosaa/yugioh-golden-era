@@ -17,6 +17,13 @@ export function testRules(): Rules {
     { id: 10, name: "Fusão Gêmea A", fusion: true, atk: 2000, def: 1500, ...base },
     { id: 11, name: "Fusão Gêmea B", fusion: true, atk: 1500, def: 2100, ...base },
   ];
+  // Monstros com efeito (pelo nome, como no cat�logo real).
+  cards.push(
+    { id: 21, name: "Man-Eater Bug", fusion: false, atk: 450, def: 600, ...base, level: 2 },
+    { id: 22, name: "Hane-Hane", fusion: false, atk: 450, def: 500, ...base, level: 2 },
+    { id: 23, name: "Magician of Faith", fusion: false, atk: 300, def: 400, ...base, level: 1 },
+    { id: 24, name: "Kuriboh", fusion: false, atk: 300, def: 200, ...base, level: 1 },
+  );
   for (let i = 101; i <= 120; i++) cards.push({ id: i, name: `Enchimento ${i}`, fusion: false, atk: 1000, def: 1000, ...base });
   return buildRules({
     cards,
@@ -26,6 +33,19 @@ export function testRules(): Rules {
       { result: 9, materials: [7, 3] },
       { result: 10, materials: [1, 2] },
       { result: 11, materials: [1, 2] },
+    ],
+    support: [
+      { id: 201, name: "Dark Hole", kind: "spell" },
+      { id: 202, name: "Raigeki", kind: "spell" },
+      { id: 203, name: "Pot of Greed", kind: "spell" },
+      { id: 204, name: "Monster Reborn", kind: "spell" },
+      { id: 205, name: "Fissure", kind: "spell" },
+      { id: 206, name: "Ookazi", kind: "spell" },
+      { id: 207, name: "Hinotama", kind: "spell" },
+      { id: 208, name: "Dian Keto the Cure Master", kind: "spell" },
+      { id: 211, name: "Mirror Force", kind: "trap" },
+      { id: 212, name: "Magic Cylinder", kind: "trap" },
+      { id: 213, name: "Negate Attack", kind: "trap" },
     ],
   });
 }
@@ -49,6 +69,10 @@ export function stateWith(
     hand?: [number[], number[]];
     deck?: [number[], number[]];
     field?: [(MonsterOnField | null)[], (MonsterOnField | null)[]];
+    traps?: [(number | null)[], (number | null)[]];
+    graveyard?: [number[], number[]];
+    spellUsed?: boolean;
+    pending?: GameState["pending"];
     lp?: [number, number];
   } = {},
 ): GameState {
@@ -58,12 +82,15 @@ export function stateWith(
     deck: [...(opts.deck?.[i] ?? [101, 102, 103, 104, 105, 106, 107, 108])],
     hand: [...(opts.hand?.[i] ?? [])],
     field: pad(opts.field?.[i]),
-    graveyard: [],
+    traps: [...(opts.traps?.[i] ?? []), ...Array.from({ length: rules.trapZones - (opts.traps?.[i]?.length ?? 0) }, () => null)],
+    graveyard: [...(opts.graveyard?.[i] ?? [])],
   });
   return {
     turn: opts.turn ?? 2,
     current: opts.current ?? 0,
     played: false,
+    spellUsed: opts.spellUsed ?? false,
+    pending: opts.pending ?? null,
     players: [player(0), player(1)],
     rng: 1,
     winner: null,

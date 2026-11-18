@@ -3,20 +3,27 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 
 import {
+  actorOf,
   applyAction,
+  buildDeck,
   createGame,
+  EFFECT_TEXT,
   eventsFor,
+  greedyBot,
   IllegalActionError,
   legalActions,
   randomDeck,
   viewFor,
   type CardInfo,
   type ClientMessage,
+  type DeckEntry,
+  type DeckReport,
   type GameEvent,
   type GameState,
   type PlayerIndex,
   type Rules,
   type ServerMessage,
+  type SupportInfo,
 } from "@golden-era/duel-engine";
 import { WebSocketServer, type WebSocket } from "ws";
 
@@ -31,6 +38,8 @@ export interface DuelServerOptions {
   /** Salas inativas (sem ninguém conectado) são removidas depois deste tempo. */
   roomIdleMs?: number;
   maxRooms?: number;
+  /** Pausa antes de cada jogada do bot, para o humano acompanhar. */
+  botDelayMs?: number;
 }
 
 interface User {
@@ -38,9 +47,20 @@ interface User {
   username: string;
 }
 
+/** Deck da conta escolhido para a partida (lido da API com o token do dono, nunca enviado pelo cliente). */
+interface ChosenDeck {
+  name: string;
+  entries: DeckEntry[];
+}
+
 interface Seat {
   user: User;
   ws: WebSocket | null;
+  deck?: ChosenDeck;
+  /** Nome do deck e o que entrou no baralho do duelo; preenchido quando a partida começa. */
+  deckInfo?: { name: string } & DeckReport;
+  /** Assento controlado pelo servidor (greedyBot). */
+  bot?: boolean;
 }
 
 interface Room {
@@ -48,7 +68,9 @@ interface Room {
   seats: [Seat | null, Seat | null];
   state: GameState | null;
   cards: Record<number, CardInfo>;
+  support: Record<number, SupportInfo>;
   lastActivity: number;
+  botTimer?: NodeJS.Timeout;
 }
 
 const ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem caracteres que se confundem (0/O, 1/I)
@@ -57,16 +79,27 @@ function send(ws: WebSocket | null, message: ServerMessage): void {
   if (ws && ws.readyState === ws.OPEN) ws.send(JSON.stringify(message));
 }
 
-/** Dados públicos das cartas que podem aparecer na mesa: as dos dois baralhos e todas as fusões. */
-function catalogFor(rules: Rules, decks: number[][]): Record<number, CardInfo> {
+/**
+ * Dados públicos das cartas que podem aparecer na mesa: as dos dois baralhos e todas as fusões, e, à parte, as magias e
+ * armadilhas dos baralhos (com o texto do efeito). Monstros com efeito (virar, Kuriboh) levam o texto também.
+ * Observação: o cliente recebe os dados de todas as cartas dos dois baralhos (não a mão nem a ordem); o que o oponente tem na mão ou virado continua escondido nas visões.
+ */
+function catalogFor(rules: Rules, decks: number[][]): { cards: Record<number, CardInfo>; support: Record<number, SupportInfo> } {
   const ids = new Set<number>(decks.flat());
   for (const c of Object.values(rules.cards)) if (c.fusion) ids.add(c.id);
-  const out: Record<number, CardInfo> = {};
+  const cards: Record<number, CardInfo> = {};
+  const support: Record<number, SupportInfo> = {};
   for (const id of ids) {
     const c = rules.cards[id];
-    if (c) out[id] = { id: c.id, name: c.name, atk: c.atk, def: c.def, level: c.level, attribute: c.attribute, race: c.race, stars: c.stars, fusion: c.fusion };
+    const s = rules.support[id];
+    if (c) {
+      const key = rules.monsterEffects[id];
+      cards[id] = { id: c.id, name: c.name, atk: c.atk, def: c.def, level: c.level, attribute: c.attribute, race: c.race, stars: c.stars, fusion: c.fusion, ...(key ? { effect: EFFECT_TEXT[key] } : {}) };
+    } else if (s) {
+      support[id] = { id: s.id, name: s.name, kind: s.kind, effect: EFFECT_TEXT[s.effect] };
+    }
   }
-  return out;
+  return { cards, support };
 }
 
 export async function createDuelServer(options: DuelServerOptions): Promise<{ port: number; close(): Promise<void> }> {
@@ -75,7 +108,8 @@ export async function createDuelServer(options: DuelServerOptions): Promise<{ po
   const roomIdle = options.roomIdleMs ?? 10 * 60_000;
   const maxRooms = options.maxRooms ?? 500;
 
-  const tickets = new Map<string, { user: User; expires: number }>();
+  const botDelay = options.botDelayMs ?? 800;
+  const tickets = new Map<string, { user: User; expires: number; deck?: ChosenDeck }>();
   const rooms = new Map<string, Room>();
 
   // ---------------------------------------------------------------- HTTP (ingressos)
@@ -98,14 +132,50 @@ export async function createDuelServer(options: DuelServerOptions): Promise<{ po
     }
   }
 
+  /** Lê o corpo JSON (pequeno) de um POST; vazio ou inválido vira `{}`. */
+  async function readJson(req: IncomingMessage): Promise<{ deckId?: unknown }> {
+    let raw = "";
+    for await (const chunk of req) {
+      raw += chunk;
+      if (raw.length > 1024) return {};
+    }
+    try {
+      const v = JSON.parse(raw) as unknown;
+      return v && typeof v === "object" ? (v as { deckId?: unknown }) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  /** Busca o deck na API com o token de quem pediu: só devolve o que ele pode ver (os próprios e os públicos). */
+  async function fetchDeck(deckId: string, authorization: string): Promise<ChosenDeck | null> {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(deckId)) return null;
+    try {
+      const res = await fetch(`${apiUrl}/decks/${deckId}`, { headers: { Authorization: authorization } });
+      if (!res.ok) return null;
+      const d = (await res.json()) as { name?: string; cards?: { main?: DeckEntry[] } };
+      // Só o deck principal: o modo não tem Extra Deck (fusões nascem das receitas) nem Side Deck.
+      const entries = (d.cards?.main ?? []).filter((e) => Number.isInteger(e.cardId) && Number.isInteger(e.quantity));
+      return { name: String(d.name ?? "Deck"), entries };
+    } catch {
+      return null;
+    }
+  }
+
   async function onHttp(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url ?? "/", "http://localhost");
     if (req.method === "GET" && url.pathname === "/healthz") return json(res, 200, { status: "ok", rooms: rooms.size });
     if (req.method === "POST" && url.pathname === "/tickets") {
       const user = await whoIs(req.headers.authorization);
       if (!user) return json(res, 401, { error: "token inválido" });
+      const { deckId } = await readJson(req);
+      let deck: ChosenDeck | undefined;
+      if (typeof deckId === "string" && deckId) {
+        deck = (await fetchDeck(deckId, req.headers.authorization!)) ?? undefined;
+        if (!deck) return json(res, 404, { error: "deck não encontrado" });
+      }
       const ticket = randomBytes(24).toString("base64url");
-      tickets.set(ticket, { user, expires: Date.now() + ticketTtl });
+      tickets.set(ticket, { user, expires: Date.now() + ticketTtl, deck });
       return json(res, 200, { ticket });
     }
     json(res, 404, { error: "não encontrado" });
@@ -134,22 +204,52 @@ export async function createDuelServer(options: DuelServerOptions): Promise<{ po
     for (const i of [0, 1] as const) {
       const seat = room.seats[i];
       if (!seat?.ws) continue;
-      const legal = room.state.current === i ? legalActions(rules, room.state) : [];
+      const legal = actorOf(room.state) === i ? legalActions(rules, room.state) : [];
       send(seat.ws, { type: "state", view: viewFor(room.state, i), legal, events: eventsFor(events, i) });
     }
   }
 
+  /** Se for a vez do bot, ele joga depois de uma pausa; repete até passar a vez ao humano. */
+  function scheduleBot(room: Room) {
+    const i = room.seats.findIndex((s) => s?.bot);
+    if (i < 0 || !room.state || room.state.winner !== null || actorOf(room.state) !== i || room.botTimer) return;
+    room.botTimer = setTimeout(() => {
+      room.botTimer = undefined;
+      if (!room.state || room.state.winner !== null || actorOf(room.state) !== i) return;
+      try {
+        const { state, events } = applyAction(rules, room.state, greedyBot(rules, room.state, Math.random));
+        room.state = state;
+        room.lastActivity = Date.now();
+        sendState(room, events);
+      } catch {
+        return; // jogada recusada pelo motor: não insiste (evita laço infinito)
+      }
+      scheduleBot(room);
+    }, botDelay);
+    room.botTimer.unref();
+  }
+
   function startGameIfReady(room: Room) {
     if (room.state || !room.seats[0] || !room.seats[1]) return;
-    const decks = [randomDeck(rules, randomInt(2 ** 31)), randomDeck(rules, randomInt(2 ** 31))] as [number[], number[]];
-    room.cards = catalogFor(rules, decks);
+    // Quem escolheu um deck da conta joga com ele (convertido para as regras do modo); os demais, com baralho aleatório.
+    const decks = [0, 1].map((i) => {
+      const seat = room.seats[i]!;
+      if (!seat.deck) return randomDeck(rules, randomInt(2 ** 31));
+      const built = buildDeck(rules, seat.deck.entries, randomInt(2 ** 31));
+      seat.deckInfo = { name: seat.deck.name, ...built.report };
+      return built.deck;
+    }) as [number[], number[]];
+    const catalog = catalogFor(rules, decks);
+    room.cards = catalog.cards;
+    room.support = catalog.support;
     room.state = createGame(rules, decks, randomInt(2 ** 31));
     for (const i of [0, 1] as const) {
       const seat = room.seats[i]!;
       const foe = room.seats[i === 0 ? 1 : 0]!;
-      send(seat.ws, { type: "start", room: room.code, you: i, opponent: foe.user.username, cards: room.cards });
+      send(seat.ws, { type: "start", room: room.code, you: i, opponent: foe.user.username, cards: room.cards, support: room.support, deck: seat.deckInfo });
     }
     sendState(room, []);
+    scheduleBot(room);
   }
 
   function join(ws: WebSocket, msg: Extract<ClientMessage, { type: "join" }>): Room | null {
@@ -161,7 +261,14 @@ export async function createDuelServer(options: DuelServerOptions): Promise<{ po
     }
 
     let room: Room | undefined;
-    if (msg.room) {
+    if (msg.bot) {
+      if (rooms.size >= maxRooms) {
+        send(ws, { type: "error", message: "servidor cheio, tente em instantes", fatal: true });
+        return null;
+      }
+      room = { code: newRoomCode(), seats: [null, { user: { id: "bot", username: "Bot" }, ws: null, bot: true }], state: null, cards: {}, support: {}, lastActivity: Date.now() };
+      rooms.set(room.code, room);
+    } else if (msg.room) {
       room = rooms.get(msg.room.toUpperCase());
       if (!room) {
         send(ws, { type: "error", message: "sala não encontrada", fatal: true });
@@ -172,7 +279,7 @@ export async function createDuelServer(options: DuelServerOptions): Promise<{ po
         send(ws, { type: "error", message: "servidor cheio, tente em instantes", fatal: true });
         return null;
       }
-      room = { code: newRoomCode(), seats: [null, null], state: null, cards: {}, lastActivity: Date.now() };
+      room = { code: newRoomCode(), seats: [null, null], state: null, cards: {}, support: {}, lastActivity: Date.now() };
       rooms.set(room.code, room);
     }
 
@@ -188,7 +295,7 @@ export async function createDuelServer(options: DuelServerOptions): Promise<{ po
         send(ws, { type: "error", message: "sala cheia", fatal: true });
         return null;
       }
-      room.seats[idx] = { user: t.user, ws };
+      room.seats[idx] = { user: t.user, ws, deck: t.deck };
     }
     room.lastActivity = Date.now();
 
@@ -197,8 +304,9 @@ export async function createDuelServer(options: DuelServerOptions): Promise<{ po
 
     if (room.state) {
       // Reconexão no meio da partida: reenvia a mesa inteira.
-      send(ws, { type: "start", room: room.code, you: idx as PlayerIndex, opponent: foe?.user.username ?? "?", cards: room.cards });
+      send(ws, { type: "start", room: room.code, you: idx as PlayerIndex, opponent: foe?.user.username ?? "?", cards: room.cards, support: room.support, deck: room.seats[idx]?.deckInfo });
       sendState(room, []);
+      scheduleBot(room);
     } else if (room.seats[0] && room.seats[1]) {
       startGameIfReady(room);
     } else {
@@ -211,12 +319,13 @@ export async function createDuelServer(options: DuelServerOptions): Promise<{ po
     const seat = seatOf(room, ws);
     if (seat === null || !room.state) return send(ws, { type: "error", message: "a partida ainda não começou" });
     if (room.state.winner !== null) return send(ws, { type: "error", message: "a partida já terminou" });
-    if (room.state.current !== seat) return send(ws, { type: "error", message: "não é a sua vez" });
+    if (actorOf(room.state) !== seat) return send(ws, { type: "error", message: "não é a sua vez" });
     try {
       const { state, events } = applyAction(rules, room.state, msg.action);
       room.state = state;
       room.lastActivity = Date.now();
       sendState(room, events);
+      scheduleBot(room);
     } catch (e) {
       if (e instanceof IllegalActionError) return send(ws, { type: "error", message: e.message });
       send(ws, { type: "error", message: "ação inválida" });
@@ -270,7 +379,10 @@ export async function createDuelServer(options: DuelServerOptions): Promise<{ po
     for (const [k, t] of tickets) if (t.expires < now) tickets.delete(k);
     for (const [code, room] of rooms) {
       const connected = room.seats.some((s) => s?.ws);
-      if (!connected && now - room.lastActivity > roomIdle) rooms.delete(code);
+      if (!connected && now - room.lastActivity > roomIdle) {
+        clearTimeout(room.botTimer);
+        rooms.delete(code);
+      }
     }
   }, 30_000);
   sweeper.unref();
@@ -283,6 +395,7 @@ export async function createDuelServer(options: DuelServerOptions): Promise<{ po
     close: () =>
       new Promise<void>((resolve) => {
         clearInterval(sweeper);
+        for (const room of rooms.values()) clearTimeout(room.botTimer);
         for (const client of wss.clients) client.terminate();
         wss.close(() => http.close(() => resolve()));
       }),

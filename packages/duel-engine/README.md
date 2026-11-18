@@ -3,7 +3,8 @@
 Motor de regras de duelo, **determinístico e sem dependências**, para um futuro modo jogador × jogador.
 As regras são **regras da casa inspiradas no Forbidden Memories**: não são uma cópia das do jogo original
 (estrelas, custos e fusões usam dados do nosso catálogo e fórmulas próprias). Os efeitos das cartas estão
-**desligados**: só valem ATK, DEF, nível, atributo e espécie.
+**desligados**, exceto um conjunto curto de magias, armadilhas e monstros listado em `src/effects.ts` (veja
+"Magias, armadilhas e efeitos"); nas demais só valem ATK, DEF, nível, atributo e espécie.
 
 Este pacote é só o "cérebro" (regras + simulação). Não tem rede, tela nem banco; isso vem depois.
 
@@ -11,20 +12,35 @@ Este pacote é só o "cérebro" (regras + simulação). Não tem rede, tela nem 
 
 | Tema | Regra |
 |---|---|
-| Baralho | exatamente 40 monstros, até 3 cópias de cada, sem fusões. Fusões nascem só de receitas |
+| Baralho | exatamente 40 cartas (monstros e as magias/armadilhas do modo), até 3 cópias de cada, sem fusões. Fusões nascem só de receitas |
 | Preparação | 8000 de vida, compra 5 cartas; o jogador 0 começa |
 | Turno | compra até completar 5 cartas na mão (se o baralho não der, quem ia comprar perde); depois joga, ataca e termina o turno |
-| Jogar | **uma vez por turno**: uma carta, ou várias da mão formando uma **fusão**. Sem tributo. Escolhe posição (ataque, defesa ou virada para baixo) e uma das duas estrelas da carta. Campo de 5 monstros |
+| Jogar | **uma vez por turno**: uma carta, ou várias da mão formando uma **fusão**. Sem tributo. Escolhe posição (ataque, defesa ou virada para baixo) e uma das duas estrelas da carta. Campo de 5 monstros. **Campo cheio:** a jogada exige sacrificar um monstro seu (`sacrifice` = zona dele): ele vai ao cemitério e a carta nova entra no lugar. Com zona livre não se sacrifica |
 | Fusão | combina cartas da mão (2 ou 3 materiais, em qualquer ordem) segundo as receitas do catálogo; dá para encadear (resultado + outra carta). Materiais vão ao cemitério. Se os mesmos materiais geram duas fusões, o jogador escolhe |
 | Atacar | só monstros em ataque, uma vez por turno, e não no turno em que foram jogados. Com o campo do oponente vazio o ataque é direto (ATK inteiro) |
 | Ataque × ataque | o maior ATK destrói o menor e a diferença vira dano; empate destrói os dois |
 | Ataque × defesa | ATK maior destrói sem dano; ATK menor machuca **quem atacou** pela diferença; igual não faz nada. Monstro virado para baixo é revelado ao ser atacado |
 | Posição | uma troca por turno, nunca no turno em que o monstro foi jogado nem depois de atacar |
 | Estrelas | 10 estrelas em duas rodas (A: sol > lua > vênus > mercúrio > sol; B: marte > júpiter > saturno > urano > plutão > netuno > marte). Quem tem a vantagem ganha +500 de ATK/DEF e o outro perde 500, **só na batalha** |
+| Magia | **uma por turno**, da mão, além da jogada de monstro. Resolve na hora e vai ao cemitério |
+| Armadilha | vai da mão para uma de 3 zonas, **virada para baixo** (o oponente só vê que existe uma carta). Responde a ataques |
+| Resposta | quando um ataque é declarado contra quem tem armadilha de ataque virada (ou Kuriboh na mão), o defensor passa a agir (`actorOf`): ativa a reação ou deixa passar. Sem como reagir, o ataque se resolve na hora |
 | Fim | vida em 0, baralho vazio na compra, ou limite de 80 turnos (empate) |
 | Custo do baralho | cada carta tem um custo (`cardCost`); o motor aceita um teto opcional. **Ainda não calibrado** (veja abaixo) |
 
 As estrelas de cada carta saem de uma tabela por atributo e de um hash do id (`src/stars.ts`): estável, mas inventada por nós.
+
+## Magias, armadilhas e efeitos
+
+Definidos por **nome** em `src/effects.ts` (o texto de cada efeito também); o gerador do pool (`npm run build-pool`) procura essas cartas no catálogo e grava o que achou em `data/fm-pool.json` (`support`). Para ligar mais uma carta: acrescente o nome ao mapa certo, implemente o efeito em `src/engine.ts` (e uma regra em `canCast`, se a magia puder ficar sem alvo) e escreva o teste em `src/support.test.ts`.
+
+| Tipo | Cartas |
+|---|---|
+| Magias | Dark Hole, Raigeki, Pot of Greed, Monster Reborn (escolhe o alvo), Fissure, Ookazi, Hinotama, Dian Keto the Cure Master |
+| Armadilhas (respondem a ataque) | Mirror Force, Magic Cylinder, Negate Attack |
+| Monstros | Man-Eater Bug e Hane-Hane (ao virar para cima, o dono escolhe o alvo), Magician of Faith (ao virar, leva uma magia do cemitério à mão), Kuriboh (descartado da mão, anula um ataque) |
+
+Escolhas e respostas usam `state.pending`: enquanto há algo pendente, só `actorOf(state)` age e `legalActions` lista apenas respostas/escolhas (`respond`, `pass`, `choose`). Os bots (`greedyBot`, `randomBot`) e o servidor já tratam isso; `src/fuzz.test.ts` joga 60 partidas bot × bot com o catálogo real. Baralhos aleatórios trazem até 6 magias/armadilhas.
 
 ## Uso
 
@@ -83,6 +99,7 @@ npm run simulate -w @golden-era/duel-engine  # N=300 por linha; grava data/sim-r
 
 ## Limites desta fase e próximos passos
 
-- Sem magias, armadilhas, equipamentos, terreno nem efeitos de carta (mais de mil cartas do catálogo têm texto de efeito).
+- Só as poucas magias, armadilhas e efeitos de monstros acima; sem equipamentos, terreno, armadilhas fora de ataque (ex.: Trap Hole) nem correntes (uma resposta por ataque). Mais de mil cartas do catálogo têm texto de efeito.
+- O equilíbrio do relatório de simulação foi medido **antes** das magias e armadilhas; precisa ser refeito.
 - Custo/teto não calibrado (acima). Sugestão: jogar partidas entre pessoas com o motor atrás de uma tela mínima e ajustar.
 - Rede (sala, sinalização, reconexão, anti-trapaça) e tabuleiro (web e app) ainda não existem.

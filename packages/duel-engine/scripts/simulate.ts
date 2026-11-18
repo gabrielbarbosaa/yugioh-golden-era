@@ -10,7 +10,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
 import { greedyBot, randomBot, type Bot } from "../src/bots.ts";
-import { applyAction, createGame } from "../src/engine.ts";
+import { actorOf, applyAction, createGame } from "../src/engine.ts";
 import { buildRules, deckCost, type PoolData } from "../src/pool.ts";
 import { makeRandom } from "../src/rng.ts";
 import type { Card, Rules } from "../src/types.ts";
@@ -128,7 +128,7 @@ function playMatch(deckA: number[], deckB: number[], botA: Bot, botB: Bot, seed:
   let fusions = 0;
   let guard = 0;
   while (state.winner === null) {
-    const action = seatBot[state.current](rules, state, random);
+    const action = seatBot[actorOf(state)](rules, state, random);
     const out = applyAction(rules, state, action);
     for (const e of out.events) if (e.type === "play" && e.materials.length > 1) fusions++;
     state = out.state;

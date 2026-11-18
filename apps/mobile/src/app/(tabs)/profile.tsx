@@ -83,6 +83,9 @@ function MyDecks() {
       <ThemedView style={styles.decksHeader}>
         <ThemedText type="smallBold">Meus decks</ThemedText>
         <ThemedView style={styles.decksActions}>
+          <Pressable onPress={() => router.push('/anime-decks')} accessibilityRole="button">
+            <ThemedText type="linkPrimary">Decks do anime</ThemedText>
+          </Pressable>
           <Pressable onPress={() => router.push('/import')} accessibilityRole="button">
             <ThemedText type="linkPrimary">Importar .ydk</ThemedText>
           </Pressable>
@@ -155,7 +158,7 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', gap: Spacing.two },
   stat: { flex: 1, alignItems: 'center', borderRadius: Spacing.three, padding: Spacing.three, gap: Spacing.half },
   decks: { gap: Spacing.two },
-  decksActions: { flexDirection: 'row', gap: Spacing.three },
+  decksActions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 1, gap: Spacing.three },
   decksHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   pressed: { opacity: 0.7 },
 });

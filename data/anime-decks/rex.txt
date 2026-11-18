@@ -1,0 +1,22 @@
+# Lista aproximada montada a partir do anime (era Duel Monsters); cartas que não existem no catálogo da era vão para missing.
+slug: rex
+personagem: Rex Raptor
+serie: Reino dos Duelistas
+descricao: O deck de dinossauros de Rex: monstros grandes e brutos para atropelar o campo adversário.
+capa: Two-Headed King Rex
+
+1 Two-Headed King Rex
+1 Black Tyranno
+1 Gilasaurus
+1 Uraby
+1 Sabretooth Tiger
+1 Petit Dragon
+1 Crawling Dragon
+1 Babycerasaurus
+1 Giant Rex
+1 Dragon Zombie
+1 Pot of Greed
+1 Monster Reborn
+1 Dark Hole
+1 Mirror Force
+1 Trap Hole

@@ -238,6 +238,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/anime-decks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Decks de personagens do anime (era Duel Monsters)
+         * @description Listas aproximadas, montadas a partir do anime. Cartas do deck no anime que não existem no catálogo
+         *     da era vêm em `missing`.
+         */
+        get: operations["listAnimeDecks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/anime-decks/{slug}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copia um deck de personagem do anime para a conta como rascunho privado
+         * @description Cria um deck privado do usuário. O servidor respeita a lista de proibidas/limitadas da era
+         *     (reduz as cópias, ou omite a carta proibida) e o Extra Deck; o que foi ajustado ou não existe
+         *     no catálogo é anotado na descrição do deck.
+         */
+        post: operations["importAnimeDeck"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/decks/{deckId}": {
         parameters: {
             query?: never;
@@ -634,6 +679,20 @@ export interface components {
             archetype?: string | null;
             visibility: components["schemas"]["DeckVisibility"];
             cards: components["schemas"]["DeckCards"];
+        };
+        AnimeDeck: {
+            slug: string;
+            character: string;
+            series: string;
+            description: string;
+            /** Format: int64 */
+            coverCardId: number;
+            /** Format: uri */
+            coverImageUrl?: string | null;
+            /** @description Cópias de cartas encontradas no catálogo da era */
+            cardCount: number;
+            /** @description Cartas do deck no anime que não existem no catálogo da era */
+            missing: string[];
         };
         DeckSummary: {
             /** Format: uuid */
@@ -1120,6 +1179,50 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             422: components["responses"]["ValidationError"];
+        };
+    };
+    listAnimeDecks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Decks disponíveis */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnimeDeck"][];
+                };
+            };
+        };
+    };
+    importAnimeDeck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deck criado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deck"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
     getDeck: {

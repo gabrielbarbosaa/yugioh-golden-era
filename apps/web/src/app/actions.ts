@@ -5,7 +5,8 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { api, describeError } from "@/lib/api";
-import { authHeaders } from "@/lib/session";
+import type { CardLite, DeckCards } from "@/lib/deck-rules";
+import { authHeaders, getCurrentUser } from "@/lib/session";
 import {
   ACCESS_COOKIE,
   REFRESH_COOKIE,
@@ -148,4 +149,79 @@ export async function setOwned(cardId: number, quantity: number) {
   });
   revalidatePath("/collection");
   revalidatePath(`/cards/${cardId}`);
+}
+
+/** Copia um deck de personagem do anime para a conta (rascunho privado) e abre o deck criado. */
+export async function importAnimeDeck(slug: string) {
+  const headers = await authHeaders();
+  if (!headers) redirect(`/login?next=${encodeURIComponent("/")}`);
+
+  const res = await api.POST("/anime-decks/{slug}/import", { params: { path: { slug } }, headers });
+  if (res.response.status === 401) redirect(`/login?next=${encodeURIComponent("/")}`);
+  if (!res.data) throw new Error(describeError(res.error));
+  redirect(`/decks/${res.data.id}`);
+}
+
+/** Frase para o erro da API; em 422 junta as mensagens por campo (ex.: carta proibida, deck principal curto). */
+function problemText(error: unknown): string {
+  const problem = error as { errors?: { message?: string }[] } | undefined;
+  const reasons = (problem?.errors ?? []).map((e) => e.message).filter(Boolean);
+  return reasons.length ? reasons.join(" ") : describeError(error);
+}
+
+export type DeckDraft = { name: string; description: string; visibility: "private" | "public"; cards: DeckCards };
+
+/**
+ * Cria (`deckId` nulo) ou substitui um deck do usuário. Em caso de sucesso abre o deck; em erro devolve a mensagem
+ * da API (a API é quem valida as regras).
+ */
+export async function saveDeck(deckId: string | null, draft: DeckDraft): Promise<{ error: string }> {
+  const headers = await authHeaders();
+  if (!headers) redirect(`/login?next=${encodeURIComponent(deckId ? `/decks/${deckId}/edit` : "/decks/new")}`);
+
+  const body = { name: draft.name.trim(), description: draft.description, visibility: draft.visibility, cards: draft.cards };
+  if (!body.name) return { error: "Dê um nome ao deck." };
+
+  let id: string;
+  try {
+    const res = deckId
+      ? await api.PUT("/decks/{deckId}", { params: { path: { deckId } }, body, headers })
+      : await api.POST("/decks", { body, headers });
+    if (res.response.status === 401) redirect(`/login?next=${encodeURIComponent("/")}`);
+    if (!res.data) return { error: problemText(res.error) };
+    id = res.data.id;
+  } catch (e) {
+    if (e && typeof e === "object" && "digest" in e) throw e; // redirect() do Next sobe como exceção
+    return { error: "Não foi possível falar com a API." };
+  }
+  revalidatePath(`/decks/${id}`);
+  redirect(`/decks/${id}`);
+}
+
+/** Exclui um deck do usuário e volta ao perfil. */
+export async function deleteDeck(deckId: string) {
+  const headers = await authHeaders();
+  if (!headers) redirect("/login");
+  const res = await api.DELETE("/decks/{deckId}", { params: { path: { deckId } }, headers });
+  if (!res.response.ok) throw new Error(describeError(res.error));
+  const me = await getCurrentUser();
+  redirect(me ? `/users/${me.username}` : "/");
+}
+
+/** Copia um deck público para a conta (rascunho privado) e abre o editor. */
+export async function copyDeck(deckId: string) {
+  const headers = await authHeaders();
+  if (!headers) redirect(`/login?next=${encodeURIComponent(`/decks/${deckId}`)}`);
+  const res = await api.POST("/decks/{deckId}/copy", { params: { path: { deckId } }, headers });
+  if (res.response.status === 401) redirect(`/login?next=${encodeURIComponent(`/decks/${deckId}`)}`);
+  if (!res.data) throw new Error(describeError(res.error));
+  redirect(`/decks/${res.data.id}/edit`);
+}
+
+/** Busca por nome para o editor (o navegador não fala com a API, então a busca passa por aqui). */
+export async function searchCards(q: string): Promise<CardLite[]> {
+  const text = q.trim().slice(0, 100);
+  if (text.length < 2) return [];
+  const { data } = await api.GET("/cards", { params: { query: { q: text, limit: 24 } } });
+  return (data?.items ?? []).map((c) => ({ id: c.id, name: c.name, type: c.type, imageSmallUrl: c.imageSmallUrl, maxCopies: c.maxCopies }));
 }

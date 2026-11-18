@@ -21,6 +21,10 @@ docker-compose.yml
 Dockerfile
 *.md
 
+# O servidor de duelo só precisa do package.json (para o lockfile)
+apps/duel-server/**
+!apps/duel-server/package.json
+
 # O app mobile só precisa do package.json (para o lockfile)
 apps/mobile/**
 !apps/mobile/package.json

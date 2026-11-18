@@ -14,6 +14,10 @@ const users: Record<string, { id: string; username: string }> = {
   "tok-caio": { id: "u3", username: "caio" },
 };
 
+const DECK_ID = "11111111-2222-4333-8444-555555555555";
+const rules = buildRules(pool as PoolData);
+const monsters = Object.values(rules.cards).filter((c) => !c.fusion).map((c) => c.id);
+
 let apiServer: ReturnType<typeof createServer>;
 let duel: Awaited<ReturnType<typeof createDuelServer>>;
 let base = "";
@@ -26,13 +30,17 @@ before(async () => {
     if (req.url === "/v1/me" && user) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(user));
+    } else if (req.url === `/v1/decks/${DECK_ID}` && user) {
+      // Deck de teste: 2 monstros do modo (3 + 2 cópias), 1 carta que o modo não tem e 1 fusão no Extra.
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ name: "Deck de teste", cards: { main: [{ cardId: monsters[0], quantity: 3 }, { cardId: monsters[1], quantity: 2 }, { cardId: 1, quantity: 3 }], extra: [], side: [] } }));
     } else {
       res.writeHead(401).end();
     }
   });
   await new Promise<void>((r) => apiServer.listen(0, r));
   const apiPort = (apiServer.address() as { port: number }).port;
-  duel = await createDuelServer({ port: 0, apiUrl: `http://127.0.0.1:${apiPort}/v1`, rules: buildRules(pool as PoolData) });
+  duel = await createDuelServer({ port: 0, apiUrl: `http://127.0.0.1:${apiPort}/v1`, rules, botDelayMs: 20 });
   base = `127.0.0.1:${duel.port}`;
 });
 
@@ -41,8 +49,12 @@ after(async () => {
   await new Promise<void>((r) => apiServer.close(() => r()));
 });
 
-async function ticket(token: string): Promise<string | null> {
-  const res = await fetch(`http://${base}/tickets`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+async function ticket(token: string, deckId?: string): Promise<string | null> {
+  const res = await fetch(`http://${base}/tickets`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: deckId ? JSON.stringify({ deckId }) : undefined,
+  });
   return res.ok ? ((await res.json()) as { ticket: string }).ticket : null;
 }
 
@@ -71,10 +83,10 @@ class Client {
   }
 }
 
-async function connect(token: string, room?: string) {
+async function connect(token: string, room?: string, bot?: boolean, deckId?: string) {
   const c = new Client();
   await c.open();
-  c.send({ type: "join", ticket: (await ticket(token))!, room });
+  c.send({ type: "join", ticket: (await ticket(token, deckId))!, room, bot });
   return c;
 }
 
@@ -167,5 +179,50 @@ test("sala cheia e sala inexistente são recusadas", async () => {
   const caio2 = await connect("tok-caio", "ZZZZ");
   assert.equal((await caio2.waitFor("error")).message, "sala não encontrada");
   ana.ws.close();
+  beto.ws.close();
+});
+
+test("contra o bot: a partida começa na hora e o bot joga sozinho quando é a vez dele", async () => {
+  const ana = await connect("tok-ana", undefined, true);
+  const start = await ana.waitFor("start");
+  assert.equal(start.opponent, "Bot");
+  let st = await ana.waitFor("state");
+
+  // Passa a vez até o bot aparecer nos eventos de turno (ou até a partida acabar).
+  for (let round = 0; round < 3; round++) {
+    if (st.view.current !== start.you) break;
+    const from = ana.messages.length;
+    ana.send({ type: "action", action: { type: "endTurn" } });
+    // O estado seguinte já é da vez do bot; depois o bot joga e devolve a vez.
+    await ana.waitFor("state", from);
+    for (let i = 0; i < 200; i++) {
+      const last = [...ana.messages].reverse().find((m) => m.type === "state");
+      if (last && last.type === "state" && (last.view.current === start.you || last.view.winner !== null) && ana.messages.length - from > 1) {
+        st = last;
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 10));
+    }
+  }
+  const played = ana.messages.filter((m) => m.type === "state").some((m) => m.type === "state" && m.events.some((e) => e.type === "turn" && e.player !== start.you));
+  assert.ok(played, "o turno do bot aconteceu");
+  ana.ws.close();
+});
+test("deck da conta: ingresso valida o deck na API e o baralho do duelo usa os monstros dele", async () => {
+  // Deck que não existe (ou que a API não mostra a quem pede) não gera ingresso.
+  assert.equal(await ticket("tok-ana", "99999999-2222-4333-8444-555555555555"), null);
+  assert.equal(await ticket("tok-ana", "nao-e-uuid"), null);
+
+  const ana = await connect("tok-ana", undefined, true, DECK_ID);
+  const start = await ana.waitFor("start");
+  assert.deepEqual(start.deck, { name: "Deck de teste", used: 5, ignored: 3, filled: 35 });
+  const st = await ana.waitFor("state");
+  const hand = st.view.players[start.you].hand!;
+  assert.equal(hand.length, 5);
+  ana.ws.close();
+
+  // Sem deck escolhido, não há relatório.
+  const beto = await connect("tok-beto", undefined, true);
+  assert.equal((await beto.waitFor("start")).deck, undefined);
   beto.ws.close();
 });

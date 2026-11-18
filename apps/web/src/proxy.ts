@@ -23,7 +23,8 @@ const USERNAME_RE = /^[A-Za-z0-9_]{3,24}$/;
 function malformedAddress(pathname: string): boolean {
   let m: RegExpExecArray | null;
   if ((m = /^\/cards\/([^/]+)\/?$/.exec(pathname))) return !/^\d{1,18}$/.test(m[1]);
-  if ((m = /^\/decks\/([^/]+)\/?$/.exec(pathname))) return !UUID_RE.test(m[1]);
+  if ((m = /^\/decks\/([^/]+)\/?$/.exec(pathname))) return m[1] !== "new" && !UUID_RE.test(m[1]);
+  if ((m = /^\/decks\/([^/]+)\/edit\/?$/.exec(pathname))) return !UUID_RE.test(m[1]);
   if ((m = /^\/users\/([^/]+)\/?$/.exec(pathname))) return !USERNAME_RE.test(decodeURIComponent(m[1]));
   return false;
 }

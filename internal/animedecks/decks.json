@@ -1,0 +1,821 @@
+{
+  "decks": [
+    {
+      "slug": "joey",
+      "character": "Joey Wheeler",
+      "series": "Reino dos Duelistas / Battle City",
+      "description": "O deck do Jounouchi: guerreiros e dragões de aposta alta, com o Dragão Negro de Olhos Vermelhos e fusões de espadachins.",
+      "coverCardId": 74677422,
+      "cards": [
+        {
+          "cardId": 74677422,
+          "name": "Red-Eyes Black Dragon",
+          "quantity": 1
+        },
+        {
+          "cardId": 45231177,
+          "name": "Flame Swordsman",
+          "quantity": 1
+        },
+        {
+          "cardId": 34460851,
+          "name": "Flame Manipulator",
+          "quantity": 1
+        },
+        {
+          "cardId": 44287299,
+          "name": "Masaki the Legendary Swordsman",
+          "quantity": 1
+        },
+        {
+          "cardId": 41462083,
+          "name": "Thousand Dragon",
+          "quantity": 1
+        },
+        {
+          "cardId": 71625222,
+          "name": "Time Wizard",
+          "quantity": 1
+        },
+        {
+          "cardId": 88819587,
+          "name": "Baby Dragon",
+          "quantity": 1
+        },
+        {
+          "cardId": 48305365,
+          "name": "Axe Raider",
+          "quantity": 1
+        },
+        {
+          "cardId": 30860696,
+          "name": "Rocket Warrior",
+          "quantity": 1
+        },
+        {
+          "cardId": 42035044,
+          "name": "Panther Warrior",
+          "quantity": 1
+        },
+        {
+          "cardId": 50005633,
+          "name": "Swordstalker",
+          "quantity": 1
+        },
+        {
+          "cardId": 36354007,
+          "name": "Gilford the Lightning",
+          "quantity": 1
+        },
+        {
+          "cardId": 77585513,
+          "name": "Jinzo",
+          "quantity": 1
+        },
+        {
+          "cardId": 7089711,
+          "name": "Hane-Hane",
+          "quantity": 1
+        },
+        {
+          "cardId": 64428736,
+          "name": "Alligator's Sword",
+          "quantity": 1
+        },
+        {
+          "cardId": 5053103,
+          "name": "Battle Ox",
+          "quantity": 1
+        },
+        {
+          "cardId": 13039848,
+          "name": "Giant Soldier of Stone",
+          "quantity": 1
+        },
+        {
+          "cardId": 32274490,
+          "name": "Skull Servant",
+          "quantity": 1
+        },
+        {
+          "cardId": 83764719,
+          "name": "Monster Reborn",
+          "quantity": 1
+        },
+        {
+          "cardId": 55144522,
+          "name": "Pot of Greed",
+          "quantity": 1
+        },
+        {
+          "cardId": 4031928,
+          "name": "Change of Heart",
+          "quantity": 1
+        },
+        {
+          "cardId": 79571449,
+          "name": "Graceful Charity",
+          "quantity": 1
+        },
+        {
+          "cardId": 44095762,
+          "name": "Mirror Force",
+          "quantity": 1
+        },
+        {
+          "cardId": 4206964,
+          "name": "Trap Hole",
+          "quantity": 1
+        },
+        {
+          "cardId": 50045299,
+          "name": "Dragon Capture Jar",
+          "quantity": 1
+        },
+        {
+          "cardId": 9293977,
+          "name": "Metal Dragon",
+          "quantity": 1
+        }
+      ],
+      "missing": [
+        "Little Swordsman of Aile"
+      ]
+    },
+    {
+      "slug": "kaiba",
+      "character": "Seto Kaiba",
+      "series": "Reino dos Duelistas / Battle City",
+      "description": "O deck de dragões de Kaiba: três Dragões Brancos de Olhos Azuis e a fusão suprema, com apoio de monstros agressivos.",
+      "coverCardId": 89631139,
+      "cards": [
+        {
+          "cardId": 89631139,
+          "name": "Blue-Eyes White Dragon",
+          "quantity": 3
+        },
+        {
+          "cardId": 23995346,
+          "name": "Blue-Eyes Ultimate Dragon",
+          "quantity": 1
+        },
+        {
+          "cardId": 43973174,
+          "name": "The Flute of Summoning Dragon",
+          "quantity": 1
+        },
+        {
+          "cardId": 5053103,
+          "name": "Battle Ox",
+          "quantity": 1
+        },
+        {
+          "cardId": 14898066,
+          "name": "Vorse Raider",
+          "quantity": 1
+        },
+        {
+          "cardId": 66602787,
+          "name": "Saggi the Dark Clown",
+          "quantity": 1
+        },
+        {
+          "cardId": 26378150,
+          "name": "Rude Kaiser",
+          "quantity": 1
+        },
+        {
+          "cardId": 17444133,
+          "name": "Kaiser Sea Horse",
+          "quantity": 1
+        },
+        {
+          "cardId": 75559356,
+          "name": "Cyber Soldier of Darkworld",
+          "quantity": 1
+        },
+        {
+          "cardId": 76184692,
+          "name": "Hitotsu-Me Giant",
+          "quantity": 1
+        },
+        {
+          "cardId": 30113682,
+          "name": "Judge Man",
+          "quantity": 1
+        },
+        {
+          "cardId": 5818798,
+          "name": "Gazelle the King of Mythical Beasts",
+          "quantity": 1
+        },
+        {
+          "cardId": 65622692,
+          "name": "Y-Dragon Head",
+          "quantity": 1
+        },
+        {
+          "cardId": 83764719,
+          "name": "Monster Reborn",
+          "quantity": 1
+        },
+        {
+          "cardId": 55144522,
+          "name": "Pot of Greed",
+          "quantity": 1
+        },
+        {
+          "cardId": 19613556,
+          "name": "Heavy Storm",
+          "quantity": 1
+        },
+        {
+          "cardId": 57728570,
+          "name": "Crush Card Virus",
+          "quantity": 1
+        },
+        {
+          "cardId": 4206964,
+          "name": "Trap Hole",
+          "quantity": 1
+        },
+        {
+          "cardId": 44095762,
+          "name": "Mirror Force",
+          "quantity": 1
+        },
+        {
+          "cardId": 12580477,
+          "name": "Raigeki",
+          "quantity": 1
+        },
+        {
+          "cardId": 53129443,
+          "name": "Dark Hole",
+          "quantity": 1
+        },
+        {
+          "cardId": 90357090,
+          "name": "Silver Fang",
+          "quantity": 1
+        }
+      ],
+      "missing": [
+        "Lord of Dragons"
+      ]
+    },
+    {
+      "slug": "mai",
+      "character": "Mai Valentine",
+      "series": "Reino dos Duelistas / Battle City",
+      "description": "O deck de Harpias de Mai: bando de aves guerreiras com apoio de magias e armadilhas de controle.",
+      "coverCardId": 76812113,
+      "cards": [
+        {
+          "cardId": 76812113,
+          "name": "Harpie Lady",
+          "quantity": 3
+        },
+        {
+          "cardId": 12206212,
+          "name": "Harpie Lady Sisters",
+          "quantity": 1
+        },
+        {
+          "cardId": 52040216,
+          "name": "Harpie's Pet Dragon",
+          "quantity": 1
+        },
+        {
+          "cardId": 90219263,
+          "name": "Elegant Egotist",
+          "quantity": 1
+        },
+        {
+          "cardId": 21297224,
+          "name": "Hysteric Fairy",
+          "quantity": 1
+        },
+        {
+          "cardId": 95956346,
+          "name": "Shining Angel",
+          "quantity": 1
+        },
+        {
+          "cardId": 15025844,
+          "name": "Mystical Elf",
+          "quantity": 1
+        },
+        {
+          "cardId": 18144507,
+          "name": "Harpie's Feather Duster",
+          "quantity": 1
+        },
+        {
+          "cardId": 63224564,
+          "name": "Cyber Shield",
+          "quantity": 1
+        },
+        {
+          "cardId": 83764719,
+          "name": "Monster Reborn",
+          "quantity": 1
+        },
+        {
+          "cardId": 55144522,
+          "name": "Pot of Greed",
+          "quantity": 1
+        },
+        {
+          "cardId": 72302403,
+          "name": "Swords of Revealing Light",
+          "quantity": 1
+        },
+        {
+          "cardId": 44095762,
+          "name": "Mirror Force",
+          "quantity": 1
+        },
+        {
+          "cardId": 4206964,
+          "name": "Trap Hole",
+          "quantity": 1
+        },
+        {
+          "cardId": 77414722,
+          "name": "Magic Jammer",
+          "quantity": 1
+        },
+        {
+          "cardId": 60082869,
+          "name": "Dust Tornado",
+          "quantity": 1
+        },
+        {
+          "cardId": 21347810,
+          "name": "Rainbow Flower",
+          "quantity": 1
+        }
+      ],
+      "missing": [
+        "Harpie's Brother",
+        "Cyber Harpie",
+        "Amazon Archer"
+      ]
+    },
+    {
+      "slug": "pegasus",
+      "character": "Maximillion Pegasus",
+      "series": "Reino dos Duelistas",
+      "description": "O criador do jogo e seu deck Toon, com o Toon World e os monstros de desenho animado, mais os Olhos Milenares.",
+      "coverCardId": 15259703,
+      "cards": [
+        {
+          "cardId": 15259703,
+          "name": "Toon World",
+          "quantity": 1
+        },
+        {
+          "cardId": 91842653,
+          "name": "Toon Summoned Skull",
+          "quantity": 1
+        },
+        {
+          "cardId": 65458948,
+          "name": "Toon Mermaid",
+          "quantity": 1
+        },
+        {
+          "cardId": 90960358,
+          "name": "Toon Dark Magician Girl",
+          "quantity": 1
+        },
+        {
+          "cardId": 42386471,
+          "name": "Toon Gemini Elf",
+          "quantity": 1
+        },
+        {
+          "cardId": 79875176,
+          "name": "Toon Cannon Soldier",
+          "quantity": 1
+        },
+        {
+          "cardId": 15270885,
+          "name": "Toon Goblin Attack Force",
+          "quantity": 1
+        },
+        {
+          "cardId": 38369349,
+          "name": "Manga Ryu-Ran",
+          "quantity": 1
+        },
+        {
+          "cardId": 64631466,
+          "name": "Relinquished",
+          "quantity": 1
+        },
+        {
+          "cardId": 63519819,
+          "name": "Thousand-Eyes Restrict",
+          "quantity": 1
+        },
+        {
+          "cardId": 27125110,
+          "name": "Thousand-Eyes Idol",
+          "quantity": 1
+        },
+        {
+          "cardId": 93889755,
+          "name": "Crass Clown",
+          "quantity": 1
+        },
+        {
+          "cardId": 69140098,
+          "name": "Gemini Elf",
+          "quantity": 1
+        },
+        {
+          "cardId": 47060154,
+          "name": "Mystic Clown",
+          "quantity": 1
+        },
+        {
+          "cardId": 38033121,
+          "name": "Dark Magician Girl",
+          "quantity": 1
+        },
+        {
+          "cardId": 55144522,
+          "name": "Pot of Greed",
+          "quantity": 1
+        },
+        {
+          "cardId": 83764719,
+          "name": "Monster Reborn",
+          "quantity": 1
+        },
+        {
+          "cardId": 44095762,
+          "name": "Mirror Force",
+          "quantity": 1
+        },
+        {
+          "cardId": 4206964,
+          "name": "Trap Hole",
+          "quantity": 1
+        },
+        {
+          "cardId": 79571449,
+          "name": "Graceful Charity",
+          "quantity": 1
+        }
+      ],
+      "missing": []
+    },
+    {
+      "slug": "rex",
+      "character": "Rex Raptor",
+      "series": "Reino dos Duelistas",
+      "description": "O deck de dinossauros de Rex: monstros grandes e brutos para atropelar o campo adversário.",
+      "coverCardId": 94119974,
+      "cards": [
+        {
+          "cardId": 94119974,
+          "name": "Two-Headed King Rex",
+          "quantity": 1
+        },
+        {
+          "cardId": 38670435,
+          "name": "Black Tyranno",
+          "quantity": 1
+        },
+        {
+          "cardId": 45894482,
+          "name": "Gilasaurus",
+          "quantity": 1
+        },
+        {
+          "cardId": 1784619,
+          "name": "Uraby",
+          "quantity": 1
+        },
+        {
+          "cardId": 75356564,
+          "name": "Petit Dragon",
+          "quantity": 1
+        },
+        {
+          "cardId": 67494157,
+          "name": "Crawling Dragon",
+          "quantity": 1
+        },
+        {
+          "cardId": 66672569,
+          "name": "Dragon Zombie",
+          "quantity": 1
+        },
+        {
+          "cardId": 55144522,
+          "name": "Pot of Greed",
+          "quantity": 1
+        },
+        {
+          "cardId": 83764719,
+          "name": "Monster Reborn",
+          "quantity": 1
+        },
+        {
+          "cardId": 53129443,
+          "name": "Dark Hole",
+          "quantity": 1
+        },
+        {
+          "cardId": 44095762,
+          "name": "Mirror Force",
+          "quantity": 1
+        },
+        {
+          "cardId": 4206964,
+          "name": "Trap Hole",
+          "quantity": 1
+        }
+      ],
+      "missing": [
+        "Sabretooth Tiger",
+        "Babycerasaurus",
+        "Giant Rex"
+      ]
+    },
+    {
+      "slug": "weevil",
+      "character": "Weevil Underwood",
+      "series": "Reino dos Duelistas",
+      "description": "O deck de insetos de Weevil: a Rainha Inseto, evoluções de casulo e a fusão que transforma lagartas em mariposas.",
+      "coverCardId": 91512835,
+      "cards": [
+        {
+          "cardId": 91512835,
+          "name": "Insect Queen",
+          "quantity": 1
+        },
+        {
+          "cardId": 89091579,
+          "name": "Basic Insect",
+          "quantity": 1
+        },
+        {
+          "cardId": 14141448,
+          "name": "Great Moth",
+          "quantity": 1
+        },
+        {
+          "cardId": 48579379,
+          "name": "Perfectly Ultimate Great Moth",
+          "quantity": 1
+        },
+        {
+          "cardId": 87756343,
+          "name": "Larvae Moth",
+          "quantity": 1
+        },
+        {
+          "cardId": 58192742,
+          "name": "Petit Moth",
+          "quantity": 1
+        },
+        {
+          "cardId": 40240595,
+          "name": "Cocoon of Evolution",
+          "quantity": 1
+        },
+        {
+          "cardId": 52584282,
+          "name": "Hercules Beetle",
+          "quantity": 1
+        },
+        {
+          "cardId": 88979991,
+          "name": "Killer Needle",
+          "quantity": 1
+        },
+        {
+          "cardId": 93900406,
+          "name": "Mushroom Man #2",
+          "quantity": 1
+        },
+        {
+          "cardId": 81843628,
+          "name": "Needle Worm",
+          "quantity": 1
+        },
+        {
+          "cardId": 26185991,
+          "name": "Pinch Hopper",
+          "quantity": 1
+        },
+        {
+          "cardId": 3492538,
+          "name": "Insect Armor with Laser Cannon",
+          "quantity": 1
+        },
+        {
+          "cardId": 34124316,
+          "name": "Cyber Jar",
+          "quantity": 1
+        },
+        {
+          "cardId": 83764719,
+          "name": "Monster Reborn",
+          "quantity": 1
+        },
+        {
+          "cardId": 55144522,
+          "name": "Pot of Greed",
+          "quantity": 1
+        },
+        {
+          "cardId": 44095762,
+          "name": "Mirror Force",
+          "quantity": 1
+        },
+        {
+          "cardId": 4206964,
+          "name": "Trap Hole",
+          "quantity": 1
+        },
+        {
+          "cardId": 8842266,
+          "name": "Poison of the Old Man",
+          "quantity": 1
+        }
+      ],
+      "missing": []
+    },
+    {
+      "slug": "yugi",
+      "character": "Yugi Muto",
+      "series": "Reino dos Duelistas / Battle City",
+      "description": "O Rei dos Jogos: Mago Negro e Maga Negra à frente, com monstros de apoio, magias de controle e armadilhas clássicas.",
+      "coverCardId": 46986414,
+      "cards": [
+        {
+          "cardId": 46986414,
+          "name": "Dark Magician",
+          "quantity": 1
+        },
+        {
+          "cardId": 38033121,
+          "name": "Dark Magician Girl",
+          "quantity": 1
+        },
+        {
+          "cardId": 70781052,
+          "name": "Summoned Skull",
+          "quantity": 1
+        },
+        {
+          "cardId": 91152256,
+          "name": "Celtic Guardian",
+          "quantity": 1
+        },
+        {
+          "cardId": 6368038,
+          "name": "Gaia The Fierce Knight",
+          "quantity": 1
+        },
+        {
+          "cardId": 28279543,
+          "name": "Curse of Dragon",
+          "quantity": 1
+        },
+        {
+          "cardId": 66889139,
+          "name": "Gaia the Dragon Champion",
+          "quantity": 1
+        },
+        {
+          "cardId": 40640057,
+          "name": "Kuriboh",
+          "quantity": 1
+        },
+        {
+          "cardId": 90357090,
+          "name": "Silver Fang",
+          "quantity": 1
+        },
+        {
+          "cardId": 41392891,
+          "name": "Feral Imp",
+          "quantity": 1
+        },
+        {
+          "cardId": 15025844,
+          "name": "Mystical Elf",
+          "quantity": 1
+        },
+        {
+          "cardId": 32452818,
+          "name": "Beaver Warrior",
+          "quantity": 1
+        },
+        {
+          "cardId": 13039848,
+          "name": "Giant Soldier of Stone",
+          "quantity": 1
+        },
+        {
+          "cardId": 54652250,
+          "name": "Man-Eater Bug",
+          "quantity": 1
+        },
+        {
+          "cardId": 31560081,
+          "name": "Magician of Faith",
+          "quantity": 1
+        },
+        {
+          "cardId": 40374923,
+          "name": "Mammoth Graveyard",
+          "quantity": 1
+        },
+        {
+          "cardId": 84257640,
+          "name": "Dian Keto the Cure Master",
+          "quantity": 1
+        },
+        {
+          "cardId": 72302403,
+          "name": "Swords of Revealing Light",
+          "quantity": 1
+        },
+        {
+          "cardId": 83764719,
+          "name": "Monster Reborn",
+          "quantity": 1
+        },
+        {
+          "cardId": 55144522,
+          "name": "Pot of Greed",
+          "quantity": 1
+        },
+        {
+          "cardId": 4031928,
+          "name": "Change of Heart",
+          "quantity": 1
+        },
+        {
+          "cardId": 5318639,
+          "name": "Mystical Space Typhoon",
+          "quantity": 1
+        },
+        {
+          "cardId": 44095762,
+          "name": "Mirror Force",
+          "quantity": 1
+        },
+        {
+          "cardId": 4206964,
+          "name": "Trap Hole",
+          "quantity": 1
+        },
+        {
+          "cardId": 62279055,
+          "name": "Magic Cylinder",
+          "quantity": 1
+        },
+        {
+          "cardId": 53129443,
+          "name": "Dark Hole",
+          "quantity": 1
+        },
+        {
+          "cardId": 18144507,
+          "name": "Harpie's Feather Duster",
+          "quantity": 1
+        },
+        {
+          "cardId": 91595718,
+          "name": "Book of Secret Arts",
+          "quantity": 1
+        },
+        {
+          "cardId": 61854111,
+          "name": "Legendary Sword",
+          "quantity": 1
+        },
+        {
+          "cardId": 50045299,
+          "name": "Dragon Capture Jar",
+          "quantity": 1
+        },
+        {
+          "cardId": 17484499,
+          "name": "Exchange of the Spirit",
+          "quantity": 1
+        }
+      ],
+      "missing": []
+    }
+  ]
+}

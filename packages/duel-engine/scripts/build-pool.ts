@@ -4,14 +4,17 @@
  *   npm run build-pool -w @golden-era/duel-engine          # API em http://localhost:8080/v1
  *   API_URL=http://host:8080/v1 npm run build-pool -w ...
  *
- * - Baralho: todos os monstros que não são de fusão (os efeitos ficam DESLIGADOS: só valem ATK, DEF, nível,
- *   atributo e espécie). Magias e armadilhas ficam de fora nesta fase.
+ * - Baralho: todos os monstros que não são de fusão. Os efeitos dos monstros ficam DESLIGADOS (só valem ATK, DEF,
+ *   nível, atributo e espécie), exceto os poucos listados em src/effects.ts.
+ * - Suporte: as magias e armadilhas de src/effects.ts (SPELLS/TRAPS), procuradas pelo nome.
  * - Fusões: os monstros de fusão, com a receita lida do início do texto (`"A" + "B" [+ "C"]`).
  *   Receitas genéricas ("5 Dragon monsters") e as que citam cartas fora do catálogo são listadas em `skipped`.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { MONSTER_EFFECTS, SPELLS, TRAPS } from "../src/effects.ts";
 
 const API_URL = process.env.API_URL ?? "http://localhost:8080/v1";
 
@@ -93,11 +96,23 @@ const pick = (c: ApiCard, fusion: boolean) => ({
   race: c.race ?? null,
 });
 
+const support: { id: number; name: string; kind: "spell" | "trap" }[] = [];
+const missingSupport: string[] = [];
+for (const [names, kind, type] of [[SPELLS, "spell", "Spell Card"], [TRAPS, "trap", "Trap Card"]] as const) {
+  for (const name of Object.keys(names)) {
+    const found = all.filter((c) => c.name === name && c.type === type);
+    if (found.length === 1) support.push({ id: found[0]!.id, name, kind });
+    else missingSupport.push(name);
+  }
+}
+const missingMonsterEffects = Object.keys(MONSTER_EFFECTS).filter((n) => !deckable.some((c) => c.name === n));
+
 const data = {
   source: `GET ${API_URL}/cards`,
   note: "Efeitos desligados: só os números de combate. Estrelas e custo são derivados ao carregar (src/stars.ts, src/pool.ts).",
   cards: [...deckable.map((c) => pick(c, false)), ...fusions.map((c) => pick(c, true))],
   recipes,
+  support,
   skipped,
 };
 
@@ -109,4 +124,6 @@ console.log(`cartas da API: ${all.length}`);
 console.log(`monstros de baralho: ${deckable.length} | fusões: ${fusions.length}`);
 console.log(`monstros sem ATK/DEF fixo (fora do modo): ${variableStats.length}`);
 console.log(`receitas utilizáveis: ${recipes.length} | genéricas ignoradas: ${skipped.generic.length} | com material fora do catálogo: ${skipped.unresolved.length}`);
+console.log(`magias/armadilhas do modo: ${support.length}${missingSupport.length ? ` (não achadas: ${missingSupport.join(", ")})` : ""}`);
+if (missingMonsterEffects.length) console.log(`efeitos de monstros sem carta no catálogo: ${missingMonsterEffects.join(", ")}`);
 console.log(`gravado em ${out}`);
