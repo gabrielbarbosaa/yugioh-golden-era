@@ -1220,3 +1220,18 @@ main.container {
 @media (prefers-reduced-motion: reduce) {
   .duel-fusion-vortex, .duel-fusion-rays, .duel-fusion-mat { animation: none; opacity: 0; }
 }
+/* ---- Cemitério: botão com a última carta e janela com abas */
+.duel-grave-button { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 3px; font-size: 0.8rem; }
+.duel-grave-button img { border-radius: 3px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
+.duel-grave-empty { display: grid; place-items: center; width: 24px; height: 35px; border: 1px dashed var(--border); border-radius: 3px; color: var(--muted); font-size: 0.8rem; }
+.duel-grave-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.duel-grave-tab { padding: 6px 12px; color: var(--text); background: rgba(10, 9, 25, 0.7); border: 1px solid var(--border-strong); border-radius: 999px; cursor: pointer; font-size: 0.85rem; }
+.duel-grave-tab:hover, .duel-grave-tab:focus-visible { border-color: var(--gold); }
+.duel-grave-tab.on { color: #1a1305; background: linear-gradient(180deg, var(--gold-light), var(--gold)); border-color: var(--gold); font-weight: 700; }
+.duel-grave-note { margin: 0; font-size: 0.8rem; }
+.duel-grave-detail { display: flex; gap: 12px; align-items: flex-start; padding: 10px; border: 1px solid var(--border-strong); border-radius: 10px; background: rgba(10, 9, 25, 0.6); font-size: 0.85rem; }
+.duel-grave-detail img { flex: none; height: auto; border-radius: 6px; }
+.duel-grave-detail p { margin: 4px 0 0; }
+.duel-grave li { position: relative; cursor: default; border-radius: 6px; outline-offset: 2px; }
+.duel-grave li:hover, .duel-grave li:focus-visible { outline: 1px solid var(--gold); }
+.duel-grave-new { font-style: normal; font-size: 0.65rem; color: var(--gold-light); }

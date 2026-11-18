@@ -448,8 +448,14 @@ export function DuelBoard({ wsUrl, imageBase, decks }: { wsUrl: string; imageBas
         <div className="duel-piles">
           <span title="Cartas na mão">✋ {p.handCount}</span>
           <span title="Cartas no baralho">🂠 {p.deckCount}</span>
-          <button type="button" className="duel-pile-button" onClick={() => setGraveOf(abs)} title="Ver o cemitério">
-            ☠ {p.graveyard.length}
+          <button type="button" className="duel-pile-button duel-grave-button" onClick={() => setGraveOf(abs)} title="Ver o cemitério" aria-label={`Ver o cemitério ${mine ? "seu" : `de ${match.opponent}`} (${p.graveyard.length} cartas)`}>
+            {p.graveyard.length > 0 ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={art(p.graveyard[p.graveyard.length - 1]!)} alt="" width={24} height={35} />
+            ) : (
+              <span className="duel-grave-empty" aria-hidden="true">☠</span>
+            )}
+            <span>Cemitério · {p.graveyard.length}</span>
           </button>
         </div>
       </div>
@@ -612,21 +618,52 @@ export function DuelBoard({ wsUrl, imageBase, decks }: { wsUrl: string; imageBas
         <div className="duel-modal" role="dialog" aria-label="Cemitério" onClick={() => setGraveOf(null)}>
           <div className="duel-modal-box" onClick={(e) => e.stopPropagation()}>
             <header>
-              <strong>Cemitério {graveOf === match.you ? "seu" : `de ${match.opponent}`}</strong>
+              <div className="duel-grave-tabs" role="tablist" aria-label="Cemitérios">
+                {([match.you, foeIdx] as const).map((side) => (
+                  <button
+                    key={side}
+                    type="button"
+                    role="tab"
+                    aria-selected={graveOf === side}
+                    className={`duel-grave-tab ${graveOf === side ? "on" : ""}`}
+                    onClick={() => setGraveOf(side)}
+                  >
+                    {side === match.you ? "Seu cemitério" : `Cemitério de ${match.opponent}`} ({view.players[side].graveyard.length})
+                  </button>
+                ))}
+              </div>
               <button className="button ghost small" onClick={() => setGraveOf(null)}>Fechar</button>
             </header>
             {view.players[graveOf].graveyard.length === 0 ? (
               <p className="muted">Vazio.</p>
             ) : (
-              <ul className="duel-grave">
-                {view.players[graveOf].graveyard.map((id, i) => (
-                  <li key={i} {...inspectProps(id)}>
+              <>
+                <p className="muted duel-grave-note">Da mais recente para a mais antiga. Passe o mouse sobre uma carta para ver os detalhes.</p>
+                {inspected && view.players[graveOf].graveyard.includes(inspected.id) ? (
+                  <div className="duel-grave-detail" aria-live="polite">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={art(id)} alt={nameOf(id)} width={90} height={131} />
-                    <span>{nameOf(id)}</span>
-                  </li>
-                ))}
-              </ul>
+                    <img src={bigArt(inspected.id)} alt={inspected.name} width={120} />
+                    <div>
+                      <strong>{inspected.name}</strong>
+                      <p className="muted">{inspected.kind}{inspected.stats ? ` · ${inspected.stats}` : ""}</p>
+                      {inspected.text ? <p>{inspected.text}</p> : null}
+                    </div>
+                  </div>
+                ) : null}
+                <ul className="duel-grave">
+                  {view.players[graveOf].graveyard
+                    .map((id, i) => ({ id, i }))
+                    .reverse()
+                    .map(({ id, i }, n) => (
+                      <li key={i} tabIndex={0} {...inspectProps(id)}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={art(id)} alt={nameOf(id)} width={90} height={131} />
+                        <span>{nameOf(id)}</span>
+                        {n === 0 ? <em className="duel-grave-new">mais recente</em> : null}
+                      </li>
+                    ))}
+                </ul>
+              </>
             )}
           </div>
         </div>
