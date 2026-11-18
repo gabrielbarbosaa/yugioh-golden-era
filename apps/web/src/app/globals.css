@@ -1089,7 +1089,7 @@ main.container {
 .duel-card[disabled] { opacity: 0.5; cursor: default; filter: saturate(0.6); }
 .duel-card.spell { box-shadow: inset 0 0 0 2px rgba(60, 170, 120, 0.7); }
 .duel-card.trap { box-shadow: inset 0 0 0 2px rgba(190, 70, 150, 0.7); }
-.duel-back { display: block; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, #2a2160, #2a2160 8px, #3a2f7c 8px, #3a2f7c 16px); }
+.duel-back { display: block; width: 100%; height: 100%; background: #1d1650 url("/card-back.jpg") center / 100% 100% no-repeat; }
 .duel-stats { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(10, 9, 25, 0.88); font-size: 0.72rem; padding: 2px 4px; text-align: center; }
 .duel-hand { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding-top: 12px; }
 .duel-traps { display: flex; gap: 10px; justify-content: center; }
