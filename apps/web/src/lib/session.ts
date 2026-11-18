@@ -14,12 +14,12 @@ export async function authHeaders(): Promise<{ Authorization: string } | undefin
   return token ? { Authorization: `Bearer ${token}` } : undefined;
 }
 
-export type CurrentUser = { id: string; username: string };
+export type CurrentUser = { id: string; username: string; avatarUrl: string | null };
 
 /** Usuário da sessão, ou `null` se não há sessão (ou o token foi recusado). */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const headers = await authHeaders();
   if (!headers) return null;
   const { data } = await api.GET("/me", { headers });
-  return data ? { id: data.id, username: data.username } : null;
+  return data ? { id: data.id, username: data.username, avatarUrl: data.avatarUrl ?? null } : null;
 }

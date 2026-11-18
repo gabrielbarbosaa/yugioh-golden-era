@@ -148,11 +148,7 @@ func (a *apiServer) toAPISummary(s store.DeckSummary) gen.DeckSummary {
 		LikedByMe:     &liked,
 		CreatedAt:     s.CreatedAt,
 		UpdatedAt:     s.UpdatedAt,
-		Owner: gen.UserSummary{
-			Id:        uuid.MustParse(s.Owner.ID),
-			Username:  s.Owner.Username,
-			AvatarUrl: s.Owner.AvatarURL,
-		},
+		Owner:         a.userSummary(s.Owner),
 	}
 }
 

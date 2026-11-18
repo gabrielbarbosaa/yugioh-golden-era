@@ -13,6 +13,9 @@ import (
 // ErrConflict indica violação de unicidade (e-mail ou username já usados).
 var ErrConflict = errors.New("conflito")
 
+// ErrInvalidCard indica que a carta escolhida como foto de perfil não existe no catálogo.
+var ErrInvalidCard = errors.New("carta inexistente")
+
 // User é uma conta. PasswordHash só deve ser usado no login.
 type User struct {
 	ID           string
@@ -20,7 +23,9 @@ type User struct {
 	Username     string
 	PasswordHash string
 	Bio          string
-	AvatarURL    *string
+	// AvatarCardID é a carta escolhida como foto de perfil; AvatarPath, o caminho relativo da imagem pequena dela.
+	AvatarCardID *int64
+	AvatarPath   *string
 	CreatedAt    time.Time
 }
 
@@ -35,9 +40,9 @@ type Profile struct {
 
 // ProfileUpdate traz os campos alteráveis; nil mantém o valor atual.
 type ProfileUpdate struct {
-	Bio         *string
-	AvatarURL   *string
-	ClearAvatar bool // true força avatar_url = NULL
+	Bio          *string
+	AvatarCardID *int64
+	ClearAvatar  bool // true força avatar_card_id = NULL
 }
 
 // Users acessa contas e refresh tokens.
@@ -46,11 +51,12 @@ type Users struct{ pool *pgxpool.Pool }
 // NewUsers devolve o acesso a usuários usando o pool informado.
 func NewUsers(pool *pgxpool.Pool) *Users { return &Users{pool: pool} }
 
-const userColumns = `id::text, email::text, username::text, password_hash, bio, avatar_url, created_at`
+const userColumns = `id::text, email::text, username::text, password_hash, bio, avatar_card_id,
+	(SELECT ca.image_small_path FROM cards ca WHERE ca.id = users.avatar_card_id), created_at`
 
 func scanUser(row pgx.Row) (User, error) {
 	var u User
-	err := row.Scan(&u.ID, &u.Email, &u.Username, &u.PasswordHash, &u.Bio, &u.AvatarURL, &u.CreatedAt)
+	err := row.Scan(&u.ID, &u.Email, &u.Username, &u.PasswordHash, &u.Bio, &u.AvatarCardID, &u.AvatarPath, &u.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return User{}, ErrNotFound
 	}
@@ -75,7 +81,7 @@ func (s *Users) ByEmail(ctx context.Context, email string) (User, error) {
 }
 
 const profileSQL = `
-SELECT u.id::text, u.email::text, u.username::text, u.password_hash, u.bio, u.avatar_url, u.created_at,
+SELECT u.id::text, u.email::text, u.username::text, u.password_hash, u.bio, u.avatar_card_id, (SELECT ca.image_small_path FROM cards ca WHERE ca.id = u.avatar_card_id), u.created_at,
        (SELECT count(*) FROM decks d WHERE d.owner_id = u.id),
        (SELECT count(*) FROM follows f WHERE f.followee_id = u.id),
        (SELECT count(*) FROM follows f WHERE f.follower_id = u.id)
@@ -85,7 +91,7 @@ FROM users u WHERE u.id = $1`
 func (s *Users) Profile(ctx context.Context, id string) (Profile, error) {
 	var p Profile
 	err := s.pool.QueryRow(ctx, profileSQL, id).Scan(&p.ID, &p.Email, &p.Username, &p.PasswordHash,
-		&p.Bio, &p.AvatarURL, &p.CreatedAt, &p.DeckCount, &p.FollowerCount, &p.FollowingCount)
+		&p.Bio, &p.AvatarCardID, &p.AvatarPath, &p.CreatedAt, &p.DeckCount, &p.FollowerCount, &p.FollowingCount)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Profile{}, ErrNotFound
 	}
@@ -101,13 +107,13 @@ func (s *Users) PublicProfile(ctx context.Context, username, viewerID string) (P
 		viewer = viewerID
 	}
 	err := s.pool.QueryRow(ctx, `
-		SELECT u.id::text, u.email::text, u.username::text, u.password_hash, u.bio, u.avatar_url, u.created_at,
+		SELECT u.id::text, u.email::text, u.username::text, u.password_hash, u.bio, u.avatar_card_id, (SELECT ca.image_small_path FROM cards ca WHERE ca.id = u.avatar_card_id), u.created_at,
 		       (SELECT count(*) FROM decks d WHERE d.owner_id = u.id AND d.visibility = 'public'),
 		       (SELECT count(*) FROM follows f WHERE f.followee_id = u.id),
 		       (SELECT count(*) FROM follows f WHERE f.follower_id = u.id),
 		       COALESCE(EXISTS (SELECT 1 FROM follows f WHERE f.followee_id = u.id AND f.follower_id = $2::uuid), false)
 		FROM users u WHERE u.username = $1`, username, viewer).
-		Scan(&p.ID, &p.Email, &p.Username, &p.PasswordHash, &p.Bio, &p.AvatarURL, &p.CreatedAt,
+		Scan(&p.ID, &p.Email, &p.Username, &p.PasswordHash, &p.Bio, &p.AvatarCardID, &p.AvatarPath, &p.CreatedAt,
 			&p.DeckCount, &p.FollowerCount, &p.FollowingCount, &p.FollowedByMe)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Profile{}, ErrNotFound
@@ -115,13 +121,17 @@ func (s *Users) PublicProfile(ctx context.Context, username, viewerID string) (P
 	return p, err
 }
 
-// UpdateProfile altera bio e/ou avatar.
+// UpdateProfile altera bio e/ou a carta da foto de perfil (ErrInvalidCard se a carta não existir).
 func (s *Users) UpdateProfile(ctx context.Context, id string, up ProfileUpdate) error {
 	tag, err := s.pool.Exec(ctx, `
 		UPDATE users SET
 		  bio = COALESCE($2, bio),
-		  avatar_url = CASE WHEN $4 THEN NULL ELSE COALESCE($3, avatar_url) END
-		WHERE id = $1`, id, up.Bio, up.AvatarURL, up.ClearAvatar)
+		  avatar_card_id = CASE WHEN $4 THEN NULL ELSE COALESCE($3::bigint, avatar_card_id) END
+		WHERE id = $1`, id, up.Bio, up.AvatarCardID, up.ClearAvatar)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23503" { // chave estrangeira: a carta não existe
+		return ErrInvalidCard
+	}
 	if err != nil {
 		return err
 	}

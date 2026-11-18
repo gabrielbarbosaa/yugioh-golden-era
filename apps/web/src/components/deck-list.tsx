@@ -2,6 +2,8 @@ import type { DeckSummary } from "@golden-era/api-client";
 import Image from "next/image";
 import Link from "next/link";
 
+import { Avatar } from "@/components/avatar";
+
 /** Lista de decks. Com `showVisibility` (decks do próprio jogador) marca rascunhos privados. */
 export function DeckList({ decks, showVisibility = false }: { decks: DeckSummary[]; showVisibility?: boolean }) {
   return (
@@ -23,7 +25,7 @@ export function DeckList({ decks, showVisibility = false }: { decks: DeckSummary
               ) : null}
               <br />
               <span className="muted">
-                por @{deck.owner.username}
+                <Avatar url={deck.owner.avatarUrl} name={deck.owner.username} size={18} /> por @{deck.owner.username}
                 {deck.archetype ? ` · ${deck.archetype}` : ""}
               </span>
               <br />

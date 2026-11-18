@@ -238,6 +238,23 @@ export async function addCardToDeck(deckId: string, cardId: number): Promise<{ o
     return { ok: false, error: "Não foi possível falar com a API." };
   }
 }
+/** Define a carta da foto de perfil (`0` remove a foto). A API valida que a carta existe. */
+export async function setAvatarCard(cardId: number): Promise<{ ok: true } | { ok: false; error: string }> {
+  const headers = await authHeaders();
+  if (!headers) redirect("/login");
+  if (!Number.isSafeInteger(cardId) || cardId < 0) return { ok: false, error: "Carta inválida." };
+  try {
+    const res = await api.PATCH("/me", { body: { avatarCardId: cardId }, headers });
+    if (res.response.status === 401) redirect("/login");
+    if (!res.data) return { ok: false, error: problemText(res.error) };
+    revalidatePath(`/users/${res.data.username}`);
+    return { ok: true };
+  } catch (e) {
+    if (e && typeof e === "object" && "digest" in e) throw e; // redirect() do Next sobe como exceção
+    return { ok: false, error: "Não foi possível falar com a API." };
+  }
+}
+
 /** Exclui um deck do usuário e volta ao perfil. */
 export async function deleteDeck(deckId: string) {
   const headers = await authHeaders();

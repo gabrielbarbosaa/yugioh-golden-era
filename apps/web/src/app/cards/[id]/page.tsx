@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { api, describeError } from "@/lib/api";
 import { LimitBadge } from "@/components/limit-badge";
 import { AddToDeck, AddToDeckLogin } from "@/components/add-to-deck";
+import { UseAsAvatar } from "@/components/avatar-picker";
 import { OwnedControl } from "@/components/owned-control";
 import { TiltCard } from "@/components/tilt-card";
 import { banlistLabel } from "@/lib/banlist";
@@ -46,7 +47,12 @@ async function AddToDeckSection({ cardId }: { cardId: number }) {
   const res = headers ? await api.GET("/me/decks", { params: { query: { limit: 50 } }, headers }) : null;
   if (!res?.data) return <AddToDeckLogin cardId={cardId} />;
   const decks = res.data.items.map((d) => ({ id: d.id, name: d.name, visibility: d.visibility }));
-  return <AddToDeck cardId={cardId} decks={decks} />;
+  return (
+    <>
+      <AddToDeck cardId={cardId} decks={decks} />
+      <UseAsAvatar cardId={cardId} />
+    </>
+  );
 }
 
 async function CardDetail({ params }: { params: Params }) {

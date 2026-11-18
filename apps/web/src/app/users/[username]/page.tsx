@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { AnimeDecks } from "@/components/anime-decks";
+import { Avatar } from "@/components/avatar";
+import { AvatarPicker } from "@/components/avatar-picker";
 import { DeckList } from "@/components/deck-list";
 import { Pager, withQuery } from "@/components/pager";
 import { api, describeError } from "@/lib/api";
@@ -50,8 +52,14 @@ async function Profile({ params, searchParams }: { params: Params; searchParams:
 
   return (
     <>
-      <h1>@{profile.username}</h1>
-      {profile.bio ? <p>{profile.bio}</p> : null}
+      <div className="profile-head">
+        <Avatar url={profile.avatarUrl} name={profile.username} size={96} />
+        <div>
+          <h1>@{profile.username}</h1>
+          {profile.bio ? <p>{profile.bio}</p> : null}
+        </div>
+      </div>
+      {isMe ? <AvatarPicker hasAvatar={profile.avatarCardId != null} /> : null}
       <div className="stats">
         <div className="stat">
           <strong>{profile.deckCount ?? 0}</strong>

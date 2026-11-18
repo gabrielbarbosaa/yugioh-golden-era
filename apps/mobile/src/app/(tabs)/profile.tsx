@@ -1,10 +1,11 @@
 import type { DeckSummary, Profile } from '@golden-era/api-client';
 import { router, useFocusEffect } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthForm } from '@/components/auth-form';
+import { Avatar } from '@/components/avatar';
 import { DeckRow } from '@/components/deck-row';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
@@ -19,22 +20,15 @@ import { useSession } from '@/lib/session';
 function MyProfile() {
   const { signOut } = useSession();
   const [state, setState] = useState<{ profile?: Profile; error?: string }>({});
-  const [attempt, setAttempt] = useState(0);
 
-  useEffect(() => {
-    let active = true;
+  const load = useCallback(() => {
     api
       .GET('/me')
-      .then(({ data, error }) => {
-        if (active) setState(data ? { profile: data } : { error: describeError(error) });
-      })
-      .catch((e) => {
-        if (active) setState({ error: describeError(e) });
-      });
-    return () => {
-      active = false;
-    };
-  }, [attempt]);
+      .then(({ data, error }) => setState(data ? { profile: data } : { error: describeError(error) }))
+      .catch((e) => setState({ error: describeError(e) }));
+  }, []);
+  // Carrega ao abrir e recarrega ao voltar da tela de escolha da foto de perfil.
+  useFocusEffect(load);
 
   const { profile, error } = state;
   if (!profile) {
@@ -43,7 +37,7 @@ function MyProfile() {
         message={error}
         onRetry={() => {
           setState({});
-          setAttempt((n) => n + 1);
+          load();
         }}
       />
     ) : (
@@ -53,9 +47,17 @@ function MyProfile() {
 
   return (
     <ThemedView style={styles.profile}>
-      <ThemedText type="subtitle" style={styles.title}>
-        @{profile.username}
-      </ThemedText>
+      <ThemedView style={styles.head}>
+        <Avatar url={profile.avatarUrl} name={profile.username} size={72} />
+        <ThemedView style={styles.headText}>
+          <ThemedText type="subtitle" style={styles.title}>
+            @{profile.username}
+          </ThemedText>
+          <Pressable onPress={() => router.push('/avatar')} accessibilityRole="button">
+            <ThemedText type="linkPrimary">{profile.avatarCardId != null ? 'Trocar foto de perfil' : 'Escolher foto de perfil'}</ThemedText>
+          </Pressable>
+        </ThemedView>
+      </ThemedView>
       {profile.bio ? <ThemedText>{profile.bio}</ThemedText> : null}
       <ThemedView type="backgroundElement" style={styles.stats}>
         <Stat label="Decks" value={profile.deckCount} />
@@ -155,6 +157,8 @@ const styles = StyleSheet.create({
   content: { paddingTop: Spacing.two, paddingBottom: BottomTabInset + Spacing.four },
   profile: { gap: Spacing.three, paddingTop: Spacing.two },
   title: { fontSize: 28, lineHeight: 34 },
+  head: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  headText: { flex: 1, gap: Spacing.one },
   stats: { flexDirection: 'row', gap: Spacing.two },
   stat: { flex: 1, alignItems: 'center', borderRadius: Spacing.three, padding: Spacing.three, gap: Spacing.half },
   decks: { gap: Spacing.two },

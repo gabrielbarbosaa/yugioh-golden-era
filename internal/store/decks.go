@@ -18,9 +18,10 @@ var ErrForbidden = errors.New("sem permissão")
 
 // DeckOwner identifica o dono de um deck.
 type DeckOwner struct {
-	ID        string
-	Username  string
-	AvatarURL *string
+	ID           string
+	Username     string
+	AvatarCardID *int64  // carta escolhida como foto de perfil
+	AvatarPath   *string // caminho relativo da imagem pequena dela
 }
 
 // DeckSummary é o deck sem a lista de cartas.
@@ -94,7 +95,7 @@ func NewDecks(pool *pgxpool.Pool) *Decks { return &Decks{pool: pool} }
 
 const summarySelect = `
 SELECT d.id::text, d.name, d.archetype, d.visibility, d.cover_card_id, d.like_count, d.comment_count,
-       d.created_at, d.updated_at, u.id::text, u.username::text, u.avatar_url,
+       d.created_at, d.updated_at, u.id::text, u.username::text, u.avatar_card_id, (SELECT ca.image_small_path FROM cards ca WHERE ca.id = u.avatar_card_id),
        COALESCE(EXISTS (SELECT 1 FROM deck_likes l WHERE l.deck_id = d.id AND l.user_id = $1::uuid), false),
        cv.image_small_path
 FROM decks d JOIN users u ON u.id = d.owner_id
@@ -103,7 +104,7 @@ LEFT JOIN cards cv ON cv.id = d.cover_card_id`
 func scanSummary(row pgx.Row) (DeckSummary, error) {
 	var s DeckSummary
 	err := row.Scan(&s.ID, &s.Name, &s.Archetype, &s.Visibility, &s.CoverCardID, &s.LikeCount, &s.CommentCount,
-		&s.CreatedAt, &s.UpdatedAt, &s.Owner.ID, &s.Owner.Username, &s.Owner.AvatarURL, &s.LikedByMe, &s.CoverImagePath)
+		&s.CreatedAt, &s.UpdatedAt, &s.Owner.ID, &s.Owner.Username, &s.Owner.AvatarCardID, &s.Owner.AvatarPath, &s.LikedByMe, &s.CoverImagePath)
 	return s, err
 }
 

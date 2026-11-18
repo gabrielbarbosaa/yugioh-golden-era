@@ -57,6 +57,7 @@ export default function RootLayout() {
             <Stack.Screen name="deck/[id]" options={{ title: 'Deck' }} />
             <Stack.Screen name="import" options={{ title: 'Importar deck' }} />
             <Stack.Screen name="anime-decks" options={{ title: 'Decks do anime' }} />
+            <Stack.Screen name="avatar" options={{ title: 'Foto de perfil' }} />
             <Stack.Screen name="user/[username]" options={{ title: 'Perfil' }} />
           </Stack>
         </CollectionGate>

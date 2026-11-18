@@ -729,7 +729,15 @@ export interface components {
             /** Format: uuid */
             id: string;
             username: string;
-            /** Format: uri */
+            /**
+             * Format: int64
+             * @description Carta escolhida como foto de perfil (nula se não escolheu)
+             */
+            avatarCardId?: number | null;
+            /**
+             * Format: uri
+             * @description Imagem pequena da carta da foto de perfil (nula se não escolheu)
+             */
             avatarUrl?: string | null;
         };
         Profile: components["schemas"]["UserSummary"] & {
@@ -743,8 +751,11 @@ export interface components {
         };
         ProfileUpdate: {
             bio?: string;
-            /** Format: uri */
-            avatarUrl?: string | null;
+            /**
+             * Format: int64
+             * @description Carta da foto de perfil (id da carta no catálogo). 0 remove a foto.
+             */
+            avatarCardId?: number;
         };
         Comment: {
             /** Format: uuid */

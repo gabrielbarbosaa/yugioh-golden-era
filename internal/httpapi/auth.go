@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"net/mail"
-	"net/url"
 	"regexp"
 	"strings"
 	"sync"
@@ -264,7 +263,7 @@ func (a *apiServer) GetMe(ctx context.Context, _ gen.GetMeRequestObject) (gen.Ge
 	if err != nil {
 		return nil, err
 	}
-	return gen.GetMe200JSONResponse(toAPIProfile(p)), nil
+	return gen.GetMe200JSONResponse(a.toAPIProfile(p)), nil
 }
 
 func (a *apiServer) UpdateMe(ctx context.Context, req gen.UpdateMeRequestObject) (gen.UpdateMeResponseObject, error) {
@@ -282,13 +281,14 @@ func (a *apiServer) UpdateMe(ctx context.Context, req gen.UpdateMeRequestObject)
 		}
 		up.Bio = b.Bio
 	}
-	if b.AvatarUrl != nil {
-		if *b.AvatarUrl == "" {
-			up.ClearAvatar = true // string vazia remove o avatar
-		} else if u, err := url.Parse(*b.AvatarUrl); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-			errs = append(errs, fieldError{"avatarUrl", "informe uma URL http(s) válida"})
-		} else {
-			up.AvatarURL = b.AvatarUrl
+	if b.AvatarCardId != nil {
+		switch {
+		case *b.AvatarCardId < 0:
+			errs = append(errs, fieldError{"avatarCardId", "informe o id de uma carta (ou 0 para remover a foto)"})
+		case *b.AvatarCardId == 0:
+			up.ClearAvatar = true // 0 remove a foto de perfil
+		default:
+			up.AvatarCardID = b.AvatarCardId
 		}
 	}
 	if len(errs) > 0 {
@@ -299,6 +299,12 @@ func (a *apiServer) UpdateMe(ctx context.Context, req gen.UpdateMeRequestObject)
 
 	id := userID(ctx)
 	if err := a.users.UpdateProfile(ctx, id, up); err != nil {
+		if errors.Is(err, store.ErrInvalidCard) {
+			return gen.UpdateMe422ApplicationProblemPlusJSONResponse{
+				ValidationErrorApplicationProblemPlusJSONResponse: validationProblem("dados inválidos",
+					[]fieldError{{"avatarCardId", "carta não encontrada no catálogo"}}),
+			}, nil
+		}
 		if errors.Is(err, store.ErrNotFound) {
 			return gen.UpdateMe401ApplicationProblemPlusJSONResponse{
 				UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse(
@@ -311,15 +317,30 @@ func (a *apiServer) UpdateMe(ctx context.Context, req gen.UpdateMeRequestObject)
 	if err != nil {
 		return nil, err
 	}
-	return gen.UpdateMe200JSONResponse(toAPIProfile(p)), nil
+	return gen.UpdateMe200JSONResponse(a.toAPIProfile(p)), nil
 }
 
-func toAPIProfile(p store.Profile) gen.Profile {
+// avatarURL monta a URL da imagem da carta da foto de perfil; nulo sem foto.
+func (a *apiServer) avatarURL(path *string) *string {
+	if path == nil {
+		return nil
+	}
+	u := a.imageBaseURL + "/" + *path
+	return &u
+}
+
+// userSummary converte o dono/autor para o contrato, com a carta da foto de perfil.
+func (a *apiServer) userSummary(o store.DeckOwner) gen.UserSummary {
+	return gen.UserSummary{Id: uuid.MustParse(o.ID), Username: o.Username, AvatarCardId: o.AvatarCardID, AvatarUrl: a.avatarURL(o.AvatarPath)}
+}
+
+func (a *apiServer) toAPIProfile(p store.Profile) gen.Profile {
 	created := p.CreatedAt
 	return gen.Profile{
 		Id:             uuid.MustParse(p.ID),
 		Username:       p.Username,
-		AvatarUrl:      p.AvatarURL,
+		AvatarCardId:   p.AvatarCardID,
+		AvatarUrl:      a.avatarURL(p.AvatarPath),
 		Bio:            &p.Bio,
 		DeckCount:      &p.DeckCount,
 		FollowerCount:  &p.FollowerCount,

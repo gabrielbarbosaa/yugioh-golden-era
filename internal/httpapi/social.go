@@ -47,12 +47,12 @@ func (a *apiServer) UnlikeDeck(ctx context.Context, req gen.UnlikeDeckRequestObj
 
 // ---- comentários ------------------------------------------------------------
 
-func toAPIComment(c store.Comment) gen.Comment {
+func (a *apiServer) toAPIComment(c store.Comment) gen.Comment {
 	return gen.Comment{
 		Id:        uuid.MustParse(c.ID),
 		Body:      c.Body,
 		CreatedAt: c.CreatedAt,
-		Author:    gen.UserSummary{Id: uuid.MustParse(c.Author.ID), Username: c.Author.Username, AvatarUrl: c.Author.AvatarURL},
+		Author:    a.userSummary(c.Author),
 	}
 }
 
@@ -82,7 +82,7 @@ func (a *apiServer) ListDeckComments(ctx context.Context, req gen.ListDeckCommen
 	}
 	page := gen.CommentPage{Items: make([]gen.Comment, 0, len(items))}
 	for _, c := range items {
-		page.Items = append(page.Items, toAPIComment(c))
+		page.Items = append(page.Items, a.toAPIComment(c))
 	}
 	if more {
 		last := items[len(items)-1]
@@ -110,7 +110,7 @@ func (a *apiServer) CreateDeckComment(ctx context.Context, req gen.CreateDeckCom
 	if err != nil {
 		return nil, err
 	}
-	return gen.CreateDeckComment201JSONResponse(toAPIComment(c)), nil
+	return gen.CreateDeckComment201JSONResponse(a.toAPIComment(c)), nil
 }
 
 func decodeCommentCursor(s string) (store.CommentCursor, error) {
@@ -155,7 +155,7 @@ func (a *apiServer) GetUser(ctx context.Context, req gen.GetUserRequestObject) (
 	if err != nil {
 		return nil, err
 	}
-	out := toAPIProfile(p)
+	out := a.toAPIProfile(p)
 	out.FollowedByMe = &p.FollowedByMe
 	return gen.GetUser200JSONResponse(out), nil
 }

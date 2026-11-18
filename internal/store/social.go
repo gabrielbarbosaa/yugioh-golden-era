@@ -76,7 +76,7 @@ func (s *Social) ListComments(ctx context.Context, deckID string, after *Comment
 		cond = " AND (c.created_at < $3 OR (c.created_at = $3 AND c.id < $4::uuid))"
 	}
 	rows, err := s.pool.Query(ctx, `
-		SELECT c.id::text, c.body, c.created_at, u.id::text, u.username::text, u.avatar_url
+		SELECT c.id::text, c.body, c.created_at, u.id::text, u.username::text, u.avatar_card_id, (SELECT ca.image_small_path FROM cards ca WHERE ca.id = u.avatar_card_id)
 		FROM comments c JOIN users u ON u.id = c.author_id
 		WHERE c.deck_id = $1::uuid`+cond+`
 		ORDER BY c.created_at DESC, c.id DESC LIMIT $2`, args...)
@@ -87,7 +87,7 @@ func (s *Social) ListComments(ctx context.Context, deckID string, after *Comment
 	var out []Comment
 	for rows.Next() {
 		var c Comment
-		if err := rows.Scan(&c.ID, &c.Body, &c.CreatedAt, &c.Author.ID, &c.Author.Username, &c.Author.AvatarURL); err != nil {
+		if err := rows.Scan(&c.ID, &c.Body, &c.CreatedAt, &c.Author.ID, &c.Author.Username, &c.Author.AvatarCardID, &c.Author.AvatarPath); err != nil {
 			return nil, false, err
 		}
 		out = append(out, c)
@@ -119,9 +119,9 @@ func (s *Social) CreateComment(ctx context.Context, deckID, authorID, body strin
 		  INSERT INTO comments (deck_id, author_id, body) SELECT id, $2::uuid, $3 FROM d
 		  RETURNING id, body, created_at, author_id
 		)
-		SELECT c.id::text, c.body, c.created_at, u.id::text, u.username::text, u.avatar_url
+		SELECT c.id::text, c.body, c.created_at, u.id::text, u.username::text, u.avatar_card_id, (SELECT ca.image_small_path FROM cards ca WHERE ca.id = u.avatar_card_id)
 		FROM c JOIN users u ON u.id = c.author_id`, deckID, authorID, body).
-		Scan(&c.ID, &c.Body, &c.CreatedAt, &c.Author.ID, &c.Author.Username, &c.Author.AvatarURL)
+		Scan(&c.ID, &c.Body, &c.CreatedAt, &c.Author.ID, &c.Author.Username, &c.Author.AvatarCardID, &c.Author.AvatarPath)
 	if errors.Is(err, pgx.ErrNoRows) || isInvalidUUID(err) {
 		return Comment{}, ErrNotFound
 	}

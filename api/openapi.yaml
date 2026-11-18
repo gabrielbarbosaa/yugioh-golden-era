@@ -1072,7 +1072,16 @@ components:
       properties:
         id: { type: string, format: uuid }
         username: { type: string }
-        avatarUrl: { type: string, format: uri, nullable: true }
+        avatarCardId:
+          type: integer
+          format: int64
+          nullable: true
+          description: Carta escolhida como foto de perfil (nula se não escolheu)
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Imagem pequena da carta da foto de perfil (nula se não escolheu)
 
     Profile:
       allOf:
@@ -1090,7 +1099,11 @@ components:
       type: object
       properties:
         bio: { type: string, maxLength: 280 }
-        avatarUrl: { type: string, format: uri, nullable: true }
+        avatarCardId:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Carta da foto de perfil (id da carta no catálogo). 0 remove a foto.
 
     Comment:
       type: object

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -96,6 +97,16 @@ func (f *fakeUsers) UpdateProfile(_ context.Context, id string, up store.Profile
 	if up.Bio != nil {
 		u.Bio = *up.Bio
 	}
+	switch {
+	case up.ClearAvatar:
+		u.AvatarCardID, u.AvatarPath = nil, nil
+	case up.AvatarCardID != nil:
+		if *up.AvatarCardID > 1000 { // no teste, só ids até 1000 "existem" no catálogo
+			return store.ErrInvalidCard
+		}
+		path := fmt.Sprintf("cards_small/%d.jpg", *up.AvatarCardID)
+		u.AvatarCardID, u.AvatarPath = up.AvatarCardID, &path
+	}
 	f.users[id] = u
 	return nil
 }
@@ -131,9 +142,10 @@ func newAuthServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	srv := httptest.NewServer(NewHandler(log, "test", Deps{
-		Cards:  &fakeCards{},
-		Users:  newFakeUsers(),
-		Tokens: auth.NewTokens("test-secret-test-secret-test-secret-12", time.Minute, time.Hour),
+		Cards:        &fakeCards{},
+		Users:        newFakeUsers(),
+		Tokens:       auth.NewTokens("test-secret-test-secret-test-secret-12", time.Minute, time.Hour),
+		ImageBaseURL: "http://img",
 	}))
 	t.Cleanup(srv.Close)
 	return srv
@@ -211,6 +223,45 @@ func TestRegisterLoginAndMe(t *testing.T) {
 	call(t, "PATCH", srv.URL+"/v1/me", login.AccessToken, map[string]string{"bio": "Rei dos Jogos"}, http.StatusOK, &upd)
 	if upd["bio"] != "Rei dos Jogos" {
 		t.Errorf("bio = %v", upd["bio"])
+	}
+}
+
+// A foto de perfil é uma carta: o perfil devolve o id e a URL da imagem; 0 remove; carta inexistente e id negativo dão 422.
+func TestProfileAvatarCard(t *testing.T) {
+	srv := newAuthServer(t)
+	tp := register(t, srv, "kaiba@example.com", "kaiba")
+
+	var me map[string]any
+	call(t, "GET", srv.URL+"/v1/me", tp.AccessToken, nil, http.StatusOK, &me)
+	if me["avatarCardId"] != nil || me["avatarUrl"] != nil {
+		t.Errorf("sem foto escolhida, esperava avatar vazio: %v / %v", me["avatarCardId"], me["avatarUrl"])
+	}
+
+	var upd map[string]any
+	call(t, "PATCH", srv.URL+"/v1/me", tp.AccessToken, map[string]any{"avatarCardId": 139}, http.StatusOK, &upd)
+	if upd["avatarCardId"] != float64(139) || upd["avatarUrl"] != "http://img/cards_small/139.jpg" {
+		t.Errorf("avatar = %v / %v", upd["avatarCardId"], upd["avatarUrl"])
+	}
+
+	// Alterar só a bio não mexe na foto.
+	call(t, "PATCH", srv.URL+"/v1/me", tp.AccessToken, map[string]any{"bio": "oi"}, http.StatusOK, &upd)
+	if upd["avatarUrl"] != "http://img/cards_small/139.jpg" {
+		t.Errorf("a bio apagou a foto: %v", upd["avatarUrl"])
+	}
+
+	var problem struct {
+		Errors []struct{ Field string } `json:"errors"`
+	}
+	call(t, "PATCH", srv.URL+"/v1/me", tp.AccessToken, map[string]any{"avatarCardId": 99999}, http.StatusUnprocessableEntity, &problem)
+	if len(problem.Errors) != 1 || problem.Errors[0].Field != "avatarCardId" {
+		t.Errorf("carta inexistente: erros = %+v", problem.Errors)
+	}
+	call(t, "PATCH", srv.URL+"/v1/me", tp.AccessToken, map[string]any{"avatarCardId": -5}, http.StatusUnprocessableEntity, &problem)
+
+	upd = nil // o JSON sem o campo não apagaria a chave antiga do mapa
+	call(t, "PATCH", srv.URL+"/v1/me", tp.AccessToken, map[string]any{"avatarCardId": 0}, http.StatusOK, &upd)
+	if upd["avatarCardId"] != nil || upd["avatarUrl"] != nil {
+		t.Errorf("0 deveria remover a foto: %v / %v", upd["avatarCardId"], upd["avatarUrl"])
 	}
 }
 

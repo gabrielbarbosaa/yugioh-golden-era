@@ -1288,3 +1288,20 @@ main.container {
 .add-deck-msg { margin: 0; min-height: 1.2em; font-size: 0.9rem; }
 .add-deck-msg.ok { color: var(--gold-light); }
 .add-deck-msg.bad { color: var(--danger); }
+/* ---- Foto de perfil (ilustração da carta recortada em círculo) */
+.avatar { display: inline-block; flex: none; vertical-align: middle; border-radius: 50%; border: 2px solid var(--gold-dark); box-shadow: 0 0 10px rgba(230, 180, 34, 0.25); background-color: #1d1650; background-size: 135% auto; background-position: 50% 44%; background-repeat: no-repeat; }
+.avatar-initial { display: inline-grid; place-items: center; color: var(--gold-light); font-family: var(--font-display); background-image: none; }
+.usermenu-link { display: inline-flex; align-items: center; gap: 8px; }
+.profile-head { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 8px; }
+.profile-head h1 { margin: 0; }
+.profile-head p { margin: 4px 0 0; }
+.deck-row .avatar { width: 18px; height: 18px; border-width: 1px; margin-right: 2px; }
+.avatar-picker { display: grid; gap: 10px; margin: 6px 0 16px; }
+.avatar-picker-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.avatar-picker-panel { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--border-strong); border-radius: 14px; background: rgba(21, 19, 46, 0.8); }
+.avatar-picker-panel p { margin: 0; }
+.avatar-picker-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.avatar-picker-grid button { display: grid; gap: 4px; width: 100%; padding: 4px; text-align: center; color: var(--text); background: rgba(10, 9, 25, 0.6); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.7rem; line-height: 1.2; }
+.avatar-picker-grid button:hover:not(:disabled), .avatar-picker-grid button:focus-visible { border-color: var(--gold); }
+.avatar-picker-grid img { width: 100%; height: auto; border-radius: 4px; }
+.use-avatar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
