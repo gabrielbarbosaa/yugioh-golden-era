@@ -1,8 +1,10 @@
-import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 
+import { GradientButton } from '@/components/gradient-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 /** Estado vazio, de carregamento ou de erro, centralizado. */
 export function StateMessage({
@@ -14,19 +16,16 @@ export function StateMessage({
   message?: string;
   onRetry?: () => void;
 }) {
+  const theme = useTheme();
   return (
     <ThemedView style={styles.box}>
-      {loading ? <ActivityIndicator /> : null}
+      {loading ? <ActivityIndicator color={theme.gold} size="large" /> : null}
       {message ? (
         <ThemedText type="small" themeColor="textSecondary" style={styles.text}>
           {message}
         </ThemedText>
       ) : null}
-      {onRetry ? (
-        <Pressable onPress={onRetry} accessibilityRole="button">
-          <ThemedText type="linkPrimary">Tentar de novo</ThemedText>
-        </Pressable>
-      ) : null}
+      {onRetry ? <GradientButton ghost small label="Tentar de novo" onPress={onRetry} /> : null}
     </ThemedView>
   );
 }

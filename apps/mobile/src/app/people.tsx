@@ -1,17 +1,19 @@
 import type { Schemas } from '@golden-era/api-client';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, TextInput } from 'react-native';
+import { FlatList, StyleSheet } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
+import { PressableScale } from '@/components/pressable-scale';
+import { SearchInput } from '@/components/search-input';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { usePagedList } from '@/hooks/use-paged-list';
-import { useTheme } from '@/hooks/use-theme';
 import { api } from '@/lib/api';
 
 type UserSummary = Schemas['UserSummary'];
@@ -26,7 +28,6 @@ const EMPTY: Record<Kind, string> = {
 
 /** Busca jogadores pelo nome (`kind=search`) ou lista os seguidores / quem o jogador segue (`username` + `kind`). */
 export default function PeopleScreen() {
-  const theme = useTheme();
   const params = useLocalSearchParams<{ kind?: string; username?: string }>();
   const kind: Kind = params.kind === 'followers' || params.kind === 'following' ? params.kind : 'search';
   const username = params.username ?? '';
@@ -55,17 +56,7 @@ export default function PeopleScreen() {
       <Stack.Screen options={{ title: kind === 'search' ? TITLES.search : `${TITLES[kind]} de @${username}` }} />
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         {kind === 'search' ? (
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Buscar jogador pelo nome"
-            placeholderTextColor={theme.textSecondary}
-            autoCapitalize="none"
-            autoCorrect={false}
-            maxLength={24}
-            autoFocus
-            style={[styles.search, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-          />
+          <SearchInput value={query} onChangeText={setQuery} placeholder="Buscar jogador pelo nome" autoCapitalize="none" autoCorrect={false} maxLength={24} autoFocus />
         ) : null}
         <FlatList
           data={items}
@@ -74,17 +65,19 @@ export default function PeopleScreen() {
           onEndReached={loadMore}
           onEndReachedThreshold={0.6}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() => router.push({ pathname: '/user/[username]', params: { username: item.username } })}
-              accessibilityRole="button"
-              accessibilityLabel={`Abrir o perfil de ${item.username}`}
-              style={({ pressed }) => pressed && styles.dim}>
-              <ThemedView type="backgroundElement" style={styles.row}>
-                <Avatar url={item.avatarUrl} name={item.username} size={44} />
-                <ThemedText type="smallBold">@{item.username}</ThemedText>
-              </ThemedView>
-            </Pressable>
+          renderItem={({ item, index }) => (
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 40).springify().damping(18)}>
+              <PressableScale
+                scaleTo={0.97}
+                onPress={() => router.push({ pathname: '/user/[username]', params: { username: item.username } })}
+                accessibilityRole="button"
+                accessibilityLabel={`Abrir o perfil de ${item.username}`}>
+                <ThemedView type="backgroundElement" style={styles.row}>
+                  <Avatar url={item.avatarUrl} name={item.username} size={44} />
+                  <ThemedText type="smallBold">@{item.username}</ThemedText>
+                </ThemedView>
+              </PressableScale>
+            </Animated.View>
           )}
           ListEmptyComponent={
             hint ? (
@@ -107,7 +100,6 @@ export default function PeopleScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center' },
   safeArea: { flex: 1, width: '100%', maxWidth: MaxContentWidth, paddingHorizontal: Spacing.three, gap: Spacing.two, paddingTop: Spacing.two },
-  search: { borderRadius: Spacing.three, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two + 2, fontSize: 16 },
   list: { gap: Spacing.two, paddingBottom: Spacing.five },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderRadius: Spacing.three, padding: Spacing.two },
   dim: { opacity: 0.6 },

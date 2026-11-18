@@ -40,6 +40,11 @@ export interface DuelServerOptions {
   maxRooms?: number;
   /** Pausa antes de cada jogada do bot, para o humano acompanhar. */
   botDelayMs?: number;
+  /**
+   * Origens de navegador autorizadas a pedir ingressos (CORS). Só importa para o app rodando na web (Expo web), pois
+   * o navegador do site passa pelo servidor do site e o app nativo não usa CORS. Vazio = nenhuma.
+   */
+  corsOrigins?: string[];
 }
 
 interface User {
@@ -164,6 +169,16 @@ export async function createDuelServer(options: DuelServerOptions): Promise<{ po
 
   async function onHttp(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url ?? "/", "http://localhost");
+    // CORS só para as origens configuradas (veja `corsOrigins`); a pré-checagem do navegador é respondida aqui.
+    const origin = req.headers.origin;
+    if (origin && options.corsOrigins?.includes(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Vary", "Origin");
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, { "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Authorization, Content-Type", "Access-Control-Max-Age": "600" });
+        return res.end();
+      }
+    }
     if (req.method === "GET" && url.pathname === "/healthz") return json(res, 200, { status: "ok", rooms: rooms.size });
     if (req.method === "POST" && url.pathname === "/tickets") {
       const user = await whoIs(req.headers.authorization);

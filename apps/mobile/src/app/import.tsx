@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientButton } from '@/components/gradient-button';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -71,19 +72,7 @@ export default function ImportScreen() {
                 {error}
               </ThemedText>
             ) : null}
-            <Pressable
-              onPress={submit}
-              disabled={busy}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.button, { backgroundColor: theme.gold }, (pressed || busy) && styles.dim]}>
-              {busy ? (
-                <ActivityIndicator color={theme.background} />
-              ) : (
-                <ThemedText type="smallBold" style={{ color: theme.background }}>
-                  Importar deck
-                </ThemedText>
-              )}
-            </Pressable>
+            <GradientButton label="Importar deck" onPress={submit} loading={busy} />
           </ScrollView>
         )}
       </SafeAreaView>

@@ -40,7 +40,7 @@ before(async () => {
   });
   await new Promise<void>((r) => apiServer.listen(0, r));
   const apiPort = (apiServer.address() as { port: number }).port;
-  duel = await createDuelServer({ port: 0, apiUrl: `http://127.0.0.1:${apiPort}/v1`, rules, botDelayMs: 20 });
+  duel = await createDuelServer({ port: 0, apiUrl: `http://127.0.0.1:${apiPort}/v1`, rules, botDelayMs: 20, corsOrigins: ["http://localhost:8081"] });
   base = `127.0.0.1:${duel.port}`;
 });
 
@@ -225,4 +225,14 @@ test("deck da conta: ingresso valida o deck na API e o baralho do duelo usa os m
   const beto = await connect("tok-beto", undefined, true);
   assert.equal((await beto.waitFor("start")).deck, undefined);
   beto.ws.close();
+});
+
+test("CORS: só a origem configurada passa na pré-checagem e recebe os cabeçalhos", async () => {
+  const pre = await fetch(`http://127.0.0.1:${duel.port}/tickets`, { method: "OPTIONS", headers: { Origin: "http://localhost:8081", "Access-Control-Request-Method": "POST" } });
+  assert.equal(pre.status, 204);
+  assert.equal(pre.headers.get("access-control-allow-origin"), "http://localhost:8081");
+  assert.match(pre.headers.get("access-control-allow-headers") ?? "", /Authorization/);
+
+  const other = await fetch(`http://127.0.0.1:${duel.port}/healthz`, { headers: { Origin: "http://evil.example" } });
+  assert.equal(other.headers.get("access-control-allow-origin"), null);
 });

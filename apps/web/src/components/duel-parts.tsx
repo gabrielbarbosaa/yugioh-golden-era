@@ -1,70 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import type { Action, CardInfo, DeckReport, GameView, Position, SupportInfo } from "@golden-era/duel-engine";
+import type { Action, GameView, Position } from "@golden-era/duel-engine";
 
-export const POSITION_NAMES = { attack: "ataque", defense: "defesa", facedown: "defesa virada", setattack: "ataque virado" } as const;
+import { CHOOSE_TITLES, factsOf, POSITION_NAMES, REVEAL_MS, STAR_NAMES, type Facts, type Match, type Reveal } from "@golden-era/duel-engine/present";
 
-export const STAR_NAMES: Record<string, string> = {
-  sun: "Sol",
-  moon: "Lua",
-  venus: "Vênus",
-  mercury: "Mercúrio",
-  mars: "Marte",
-  jupiter: "Júpiter",
-  saturn: "Saturno",
-  uranus: "Urano",
-  pluto: "Plutão",
-  neptune: "Netuno",
-};
-
-export const CHOOSE_TITLES: Record<string, string> = {
-  monsterReborn: "Monster Reborn: escolha qual monstro trazer de volta ao seu campo",
-  manEaterBug: "Man-Eater Bug: escolha o monstro que será destruído",
-  haneHane: "Hane-Hane: escolha o monstro que volta para a mão do dono",
-};
-export interface Match {
-  room: string;
-  you: 0 | 1;
-  opponent: string;
-  cards: Record<number, CardInfo>;
-  support: Record<number, SupportInfo>;
-  deck?: { name: string } & DeckReport;
-}
-
-/** Carta que o jogo anuncia no meio da mesa (magia, armadilha, efeito...). */
-export interface Reveal {
-  key: number;
-  id: number;
-  title: string;
-  name: string;
-  text: string;
-  kind: "spell" | "trap" | "effect" | "revive" | "flip" | "fusion";
-  /** Só na fusão: as cartas que se juntam (o `id` é o resultado). */
-  materials?: number[];
-}
-
-/** Quanto tempo (ms) cada anúncio fica na tela. */
-export const REVEAL_MS: Record<Reveal["kind"], number> = { spell: 2600, trap: 2600, effect: 2600, revive: 2600, flip: 1400, fusion: 3800 };
-
-/** Dados de uma carta (monstro ou magia/armadilha) para mostrar no inspetor e nos anúncios. */
-export interface Facts {
-  id: number;
-  name: string;
-  kind: string;
-  stats: string | null;
-  text: string | null;
-}
-
-export function factsOf(m: Match, id: number): Facts {
-  const s = m.support[id];
-  if (s) return { id, name: s.name, kind: s.kind === "spell" ? "Magia" : "Armadilha", stats: null, text: s.effect };
-  const c = m.cards[id];
-  if (!c) return { id, name: `#${id}`, kind: "Carta", stats: null, text: null };
-  const bits = [`ATK ${c.atk} / DEF ${c.def}`, `Nível ${c.level}`, c.attribute, c.race].filter(Boolean);
-  return { id, name: c.name, kind: c.fusion ? "Monstro de fusão" : "Monstro", stats: bits.join(" · "), text: c.effect ?? null };
-}
-
+// A lógica de apresentação (textos, anúncios, tempos) vive no pacote do motor e é a mesma do app.
+export { CHOOSE_TITLES, factsOf, POSITION_NAMES, REVEAL_MS, STAR_NAMES };
+export type { Facts, Match, Reveal };
 /** Carta clicável (com nome, números e dono) usada nas respostas e escolhas pendentes. */
 export function FaceCard({
   facts,

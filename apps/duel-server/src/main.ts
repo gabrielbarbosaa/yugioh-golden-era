@@ -6,7 +6,10 @@ import { createDuelServer } from "./server.ts";
 const port = Number(process.env.PORT ?? 8787);
 const apiUrl = process.env.API_URL ?? "http://localhost:8080/v1";
 
-const server = await createDuelServer({ port, apiUrl, rules: buildRules(pool as PoolData) });
+// Origens do app rodando na web (Expo web) em desenvolvimento; separe várias por vírgula.
+const corsOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:8081,http://localhost:19006").split(",").map((o) => o.trim()).filter(Boolean);
+
+const server = await createDuelServer({ port, apiUrl, rules: buildRules(pool as PoolData), corsOrigins });
 console.log(`servidor de duelo em :${server.port} (API ${apiUrl})`);
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {

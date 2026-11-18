@@ -1,11 +1,13 @@
 import type { Card } from '@golden-era/api-client';
 import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ArtBanner } from '@/components/art-banner';
 import { CardTile } from '@/components/card-tile';
 import { activeFilterCount, EMPTY_FILTERS, FilterSheet, type CardFilters } from '@/components/filter-sheet';
+import { PressableScale } from '@/components/pressable-scale';
+import { SearchInput } from '@/components/search-input';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -48,29 +50,28 @@ export default function CardsScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ArtBanner cardId={46986414} title="Cartas" subtitle="A era dos Duel Monsters" />
         <ThemedView style={styles.searchRow}>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Buscar por nome (ex.: Dark Magician)"
-            placeholderTextColor={theme.textSecondary}
-            autoCapitalize="none"
-            autoCorrect={false}
-            clearButtonMode="while-editing"
-            style={[styles.search, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-          />
-          <Pressable
+          <View style={{ flex: 1 }}>
+            <SearchInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Buscar por nome (ex.: Dark Magician)"
+              autoCapitalize="none"
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+            />
+          </View>
+          <PressableScale
             onPress={() => setFiltering(true)}
             accessibilityRole="button"
             accessibilityLabel="Abrir filtros"
-            style={({ pressed }) => [
+            style={[
               styles.filterButton,
-              { backgroundColor: filterCount > 0 ? theme.gold : theme.backgroundElement },
-              pressed && styles.pressed,
+              { backgroundColor: filterCount > 0 ? theme.gold : theme.backgroundElement, borderColor: filterCount > 0 ? theme.gold : theme.border },
             ]}>
             <ThemedText type="smallBold" style={filterCount > 0 ? { color: theme.background } : undefined}>
-              {filterCount > 0 ? `Filtros (${filterCount})` : 'Filtros'}
+              {filterCount > 0 ? `Filtros (${filterCount})` : '⚙ Filtros'}
             </ThemedText>
-          </Pressable>
+          </PressableScale>
         </ThemedView>
         {filterCount > 0 ? (
           <ThemedView style={styles.active}>
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, lineHeight: 34, paddingTop: Spacing.two },
   searchRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
   search: { flex: 1, borderRadius: Spacing.three, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two + 2, fontSize: 16 },
-  filterButton: { borderRadius: Spacing.three, paddingHorizontal: Spacing.three, paddingVertical: Spacing.three - 2 },
+  filterButton: { borderRadius: Spacing.three, borderWidth: 1, paddingHorizontal: Spacing.three, paddingVertical: Spacing.three - 2 },
   active: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   activeChip: { borderRadius: Spacing.three, paddingHorizontal: Spacing.three, paddingVertical: Spacing.one },
   pressed: { opacity: 0.7 },

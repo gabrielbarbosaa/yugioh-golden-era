@@ -6,7 +6,7 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
-import { Pressable, type PressableProps, View, StyleSheet } from 'react-native';
+import { Pressable, type PressableProps, ScrollView, View, StyleSheet, useWindowDimensions } from 'react-native';
 
 import { DisplayFont, MaxContentWidth, Spacing } from '@/constants/theme';
 
@@ -30,6 +30,9 @@ export default function AppTabs() {
           </TabTrigger>
           <TabTrigger name="collection" href="/collection" asChild>
             <TabButton>Coleção</TabButton>
+          </TabTrigger>
+          <TabTrigger name="duel" href="/duel" asChild>
+            <TabButton>Duelo</TabButton>
           </TabTrigger>
           <TabTrigger name="profile" href="/profile" asChild>
             <TabButton>Perfil</TabButton>
@@ -56,14 +59,19 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
 }
 
 export function CustomTabList(props: TabListProps) {
+  const { width } = useWindowDimensions();
+  const compact = width < 720; // no celular a marca some e as abas rolam para o lado
   return (
     <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" themeColor="goldLight" style={styles.brandText}>
-          GOLDEN ERA
-        </ThemedText>
-
-        {props.children}
+      <ThemedView type="backgroundElement" style={[styles.innerContainer, compact && styles.innerCompact]}>
+        {compact ? null : (
+          <ThemedText type="smallBold" themeColor="goldLight" style={styles.brandText}>
+            GOLDEN ERA
+          </ThemedText>
+        )}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
+          {props.children}
+        </ScrollView>
       </ThemedView>
     </View>
   );
@@ -90,6 +98,8 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
   },
+  innerCompact: { paddingHorizontal: Spacing.two },
+  tabsRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   brandText: {
     marginRight: 'auto',
     fontFamily: DisplayFont.bold,

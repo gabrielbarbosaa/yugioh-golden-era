@@ -8,3 +8,4 @@ export type { CardInfo, ClientMessage, ServerMessage, SupportInfo } from "./prot
 export { EFFECT_TEXT } from "./effects.ts";
 export { eventsFor, HIDDEN_CARD, randomDeck, viewFor, type GameView, type MonsterView, type PendingView, type PlayerView, type TrapView } from "./view.ts";
 export { buildDeck, type DeckEntry, type DeckReport } from "./deck.ts";
+export { CHOOSE_TITLES, describeEvent, factsOf, fxFor, hasFusion, POSITION_NAMES, REVEAL_MS, revealsFor, STAR_NAMES, type Facts, type Fx, type Match, type Reveal } from "./present.ts";

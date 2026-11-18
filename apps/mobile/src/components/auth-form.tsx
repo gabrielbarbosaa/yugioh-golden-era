@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput } from 'react-native';
+import { Pressable, StyleSheet, TextInput } from 'react-native';
 
+import { GradientButton } from '@/components/gradient-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -95,19 +96,7 @@ export function AuthForm() {
         </ThemedText>
       ) : null}
 
-      <Pressable
-        onPress={submit}
-        disabled={busy}
-        accessibilityRole="button"
-        style={({ pressed }) => [styles.button, { backgroundColor: theme.gold }, (pressed || busy) && styles.pressed]}>
-        {busy ? (
-          <ActivityIndicator color={theme.background} />
-        ) : (
-          <ThemedText type="smallBold" style={{ color: theme.background }}>
-            {register ? 'Criar conta' : 'Entrar'}
-          </ThemedText>
-        )}
-      </Pressable>
+      <GradientButton label={register ? 'Criar conta' : 'Entrar'} onPress={submit} loading={busy} />
 
       <Pressable
         onPress={() => {

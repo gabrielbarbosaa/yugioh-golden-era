@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { Colors, DisplayFont } from '@/constants/theme';
 import { CollectionProvider } from '@/lib/collection';
+import { DuelProvider } from '@/lib/duel';
 import { SessionProvider, useSession } from '@/lib/session';
 
 const palette = Colors.dark;
@@ -50,6 +51,7 @@ export default function RootLayout() {
     <ThemeProvider value={navigationTheme}>
       <SessionProvider>
         <CollectionGate>
+          <DuelProvider>
           <AnimatedSplashOverlay />
           <Stack screenOptions={headerOptions}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -60,7 +62,9 @@ export default function RootLayout() {
             <Stack.Screen name="avatar" options={{ title: 'Foto de perfil' }} />
             <Stack.Screen name="people" options={{ title: 'Jogadores' }} />
             <Stack.Screen name="user/[username]" options={{ title: 'Perfil' }} />
+            <Stack.Screen name="duel-match" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
           </Stack>
+          </DuelProvider>
         </CollectionGate>
       </SessionProvider>
     </ThemeProvider>

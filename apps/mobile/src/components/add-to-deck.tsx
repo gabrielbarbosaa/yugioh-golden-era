@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 
+import { GradientButton } from '@/components/gradient-button';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -134,19 +135,7 @@ export function AddToDeck({ card }: { card: Card }) {
           </Pressable>
         ))}
       </ThemedView>
-      <Pressable
-        onPress={add}
-        disabled={busy}
-        accessibilityRole="button"
-        style={({ pressed }) => [styles.button, { backgroundColor: theme.gold }, (pressed || busy) && styles.dim]}>
-        {busy ? (
-          <ActivityIndicator color={theme.background} />
-        ) : (
-          <ThemedText type="smallBold" style={{ color: theme.background }}>
-            Adicionar ao baralho
-          </ThemedText>
-        )}
-      </Pressable>
+      <GradientButton label="Adicionar ao baralho" onPress={add} loading={busy} style={styles.button} />
       {message ? (
         <ThemedView style={styles.result}>
           <ThemedText type="small" style={message.ok ? { color: theme.goldLight } : { color: '#ff6b6b' }} accessibilityRole={message.ok ? 'text' : 'alert'}>

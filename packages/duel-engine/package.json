@@ -8,6 +8,7 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./present": "./src/present.ts",
     "./data/fm-pool.json": "./data/fm-pool.json"
   },
   "scripts": {

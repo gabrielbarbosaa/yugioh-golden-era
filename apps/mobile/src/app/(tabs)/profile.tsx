@@ -1,4 +1,5 @@
 import type { DeckSummary, Profile } from '@golden-era/api-client';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
@@ -47,9 +48,9 @@ function MyProfile() {
 
   return (
     <ThemedView style={styles.profile}>
-      <ThemedView style={styles.head}>
+      <LinearGradient colors={['#2a2658', '#15132E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.head}>
         <Avatar url={profile.avatarUrl} name={profile.username} size={72} />
-        <ThemedView style={styles.headText}>
+        <ThemedView style={[styles.headText, { backgroundColor: 'transparent' }]}>
           <ThemedText type="subtitle" style={styles.title}>
             @{profile.username}
           </ThemedText>
@@ -57,7 +58,7 @@ function MyProfile() {
             <ThemedText type="linkPrimary">{profile.avatarCardId != null ? 'Trocar foto de perfil' : 'Escolher foto de perfil'}</ThemedText>
           </Pressable>
         </ThemedView>
-      </ThemedView>
+      </LinearGradient>
       {profile.bio ? <ThemedText>{profile.bio}</ThemedText> : null}
       <ThemedView type="backgroundElement" style={styles.stats}>
         <Stat label="Decks" value={profile.deckCount} />
@@ -174,13 +175,13 @@ const styles = StyleSheet.create({
   content: { paddingTop: Spacing.two, paddingBottom: BottomTabInset + Spacing.four },
   profile: { gap: Spacing.three, paddingTop: Spacing.two },
   title: { fontSize: 28, lineHeight: 34 },
-  head: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  head: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, padding: Spacing.three, borderRadius: 20, borderWidth: 1, borderColor: '#3A3220' },
   headText: { flex: 1, gap: Spacing.one },
   stats: { flexDirection: 'row', gap: Spacing.two },
   statTap: { flex: 1 },
   stat: { flex: 1, alignItems: 'center', borderRadius: Spacing.three, padding: Spacing.three, gap: Spacing.half },
   decks: { gap: Spacing.two },
-  decksActions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 1, gap: Spacing.three },
-  decksHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  decksActions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  decksHeader: { gap: Spacing.one },
   pressed: { opacity: 0.7 },
 });

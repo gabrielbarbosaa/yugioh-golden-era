@@ -2,7 +2,9 @@ import type { Card } from '@golden-era/api-client';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { AddToDeck } from '@/components/add-to-deck';
 import { CARD_ASPECT } from '@/components/card-tile';
@@ -20,16 +22,25 @@ import { banlistLabel } from '@/lib/deck-rules';
 import { describeError } from '@/lib/errors';
 import { useSession } from '@/lib/session';
 
+/** Cada bloco da tela sobe e aparece em sequência (`i` é a posição). */
+function Rise({ i, children }: { i: number; children: React.ReactNode }) {
+  return (
+    <Animated.View entering={FadeInDown.delay(80 + i * 70).springify().damping(18)} style={styles.rise}>
+      {children}
+    </Animated.View>
+  );
+}
+
 function Stat({ label, value }: { label: string; value?: number | null }) {
   return (
-    <ThemedView type="backgroundSelected" style={styles.stat}>
+    <LinearGradient colors={['#2a2658', '#15132E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.stat}>
       <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
         {label}
       </ThemedText>
       <ThemedText type="subtitle" style={styles.statValue}>
         {value ?? '?'}
       </ThemedText>
-    </ThemedView>
+    </LinearGradient>
   );
 }
 
@@ -109,6 +120,7 @@ export default function CardDetailScreen() {
         <StateMessage loading={!error} message={error ?? undefined} onRetry={error ? load : undefined} />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
+          <Animated.View entering={ZoomIn.duration(450).springify().damping(14)} style={styles.rise}>
           <TiltView>
             <ThemedView style={[styles.artFrame, { shadowColor: theme.gold }]}>
               <Image
@@ -120,9 +132,12 @@ export default function CardDetailScreen() {
               />
             </ThemedView>
           </TiltView>
-          <ThemedText type="subtitle" style={styles.name}>
-            {card.name}
-          </ThemedText>
+          </Animated.View>
+          <Rise i={0}>
+            <ThemedText type="subtitle" style={styles.name}>
+              {card.name}
+            </ThemedText>
+          </Rise>
           {banlistLabel(card) ? (
             <ThemedView type="backgroundElement" style={[styles.pill, { borderColor: theme.border }]}>
               <LimitBadge maxCopies={card.maxCopies} />
@@ -133,14 +148,21 @@ export default function CardDetailScreen() {
             </ThemedView>
           ) : null}
           {card.atk != null || card.def != null ? (
-            <ThemedView style={styles.plate}>
-              <Stat label="ATK" value={card.atk} />
-              <Stat label="DEF" value={card.def} />
-              {card.level != null ? <Stat label="Nível" value={card.level} /> : null}
-            </ThemedView>
+            <Rise i={1}>
+              <ThemedView style={styles.plate}>
+                <Stat label="ATK" value={card.atk} />
+                <Stat label="DEF" value={card.def} />
+                {card.level != null ? <Stat label="Nível" value={card.level} /> : null}
+              </ThemedView>
+            </Rise>
           ) : null}
-          <Owned cardId={card.id} />
-          <AddToDeck card={card} />
+          <Rise i={2}>
+            <Owned cardId={card.id} />
+          </Rise>
+          <Rise i={3}>
+            <AddToDeck card={card} />
+          </Rise>
+          <Rise i={4}>
           <ThemedView style={styles.facts}>
             <Fact label="Tipo" value={card.type} />
             <Fact label="Atributo" value={card.attribute} />
@@ -148,9 +170,12 @@ export default function CardDetailScreen() {
             <Fact label="Arquétipo" value={card.archetype} />
             <Fact label="Lançamento (OCG)" value={card.ocgDate} />
           </ThemedView>
-          <ThemedView type="backgroundElement" style={[styles.desc, { borderLeftColor: theme.gold }]}>
-            <ThemedText>{card.desc}</ThemedText>
-          </ThemedView>
+          </Rise>
+          <Rise i={5}>
+            <ThemedView type="backgroundElement" style={[styles.desc, { borderLeftColor: theme.gold }]}>
+              <ThemedText>{card.desc}</ThemedText>
+            </ThemedView>
+          </Rise>
         </ScrollView>
       )}
     </ThemedView>
@@ -172,7 +197,8 @@ const styles = StyleSheet.create({
   name: { fontSize: 24, lineHeight: 30, textAlign: 'center' },
   pill: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, borderWidth: 1, borderRadius: 999, paddingVertical: Spacing.one, paddingLeft: Spacing.one, paddingRight: Spacing.three },
   plate: { flexDirection: 'row', gap: Spacing.two, alignSelf: 'stretch' },
-  stat: { flex: 1, alignItems: 'center', borderRadius: Spacing.three, paddingVertical: Spacing.two },
+  rise: { alignSelf: 'stretch', alignItems: 'center' },
+  stat: { flex: 1, alignItems: 'center', borderRadius: Spacing.three, paddingVertical: Spacing.two, borderWidth: 1, borderColor: '#3A3220' },
   statLabel: { letterSpacing: 2, fontSize: 11, lineHeight: 14 },
   statValue: { fontSize: 24, lineHeight: 30 },
   facts: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, justifyContent: 'center' },

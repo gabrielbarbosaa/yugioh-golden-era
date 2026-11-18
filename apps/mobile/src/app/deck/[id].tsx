@@ -2,12 +2,13 @@ import type { Card, Deck, Schemas } from '@golden-era/api-client';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD_ASPECT } from '@/components/card-tile';
 import { CardPicker } from '@/components/card-picker';
 import { DeckSocial } from '@/components/deck-social';
+import { GradientButton } from '@/components/gradient-button';
 import { StateMessage } from '@/components/state-message';
 import { YdkExport } from '@/components/ydk-export';
 import { ThemedText } from '@/components/themed-text';
@@ -338,19 +339,7 @@ function Editor({
 
       {readOnly && deckId && signedIn ? (
         <ThemedView style={styles.section}>
-          <Pressable
-            onPress={copyToMine}
-            disabled={saving}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.save, { backgroundColor: theme.gold }, (pressed || saving) && styles.dim]}>
-            {saving ? (
-              <ActivityIndicator color={theme.background} />
-            ) : (
-              <ThemedText type="smallBold" style={{ color: theme.background }}>
-                Copiar para minha conta
-              </ThemedText>
-            )}
-          </Pressable>
+          <GradientButton label="Copiar para minha conta" onPress={copyToMine} loading={saving} />
           {message ? (
             <ThemedText type="small" style={styles.error} accessibilityRole="alert">
               {message.text}
@@ -375,19 +364,7 @@ function Editor({
           <Pressable onPress={() => setPicking(true)} accessibilityRole="button">
             <ThemedText type="linkPrimary">+ Adicionar cartas</ThemedText>
           </Pressable>
-          <Pressable
-            onPress={save}
-            disabled={saving}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.save, { backgroundColor: theme.gold }, (pressed || saving) && styles.dim]}>
-            {saving ? (
-              <ActivityIndicator color={theme.background} />
-            ) : (
-              <ThemedText type="smallBold" style={{ color: theme.background }}>
-                Salvar deck
-              </ThemedText>
-            )}
-          </Pressable>
+          <GradientButton label="Salvar deck" onPress={save} loading={saving} />
           {deckId ? (
             <Pressable onPress={remove} accessibilityRole="button">
               <ThemedText type="small" style={styles.error}>
