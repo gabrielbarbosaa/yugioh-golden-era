@@ -12,8 +12,8 @@ export default function DuelPage() {
   return (
     <>
       <PageBanner title="Duelo" artCardId={46986414}>
-        Protótipo de partida jogador contra jogador com regras da casa inspiradas em Forbidden Memories. Escolha um dos seus
-        decks (ou um baralho aleatório da era); o servidor valida cada jogada.
+        Partidas com regras da casa inspiradas em Forbidden Memories: sem tributo, fusões na mão e estrelas de guarda. Escolha
+        o seu baralho e enfrente o bot ou um amigo; o servidor valida cada jogada.
       </PageBanner>
       <Suspense fallback={<p className="skeleton">Carregando…</p>}>
         <Gate />
@@ -33,7 +33,13 @@ async function Gate() {
   }
   const headers = await authHeaders();
   const { data } = await api.GET("/me/decks", { params: { query: { limit: 50 } }, headers });
-  const decks = (data?.items ?? []).map((d) => ({ id: d.id, name: d.name }));
+  const decks = (data?.items ?? []).map((d) => ({
+    id: d.id,
+    name: d.name,
+    cover: d.coverImageUrl ?? null,
+    archetype: d.archetype ?? null,
+    visibility: d.visibility,
+  }));
   return (
     <DuelBoard
       decks={decks}

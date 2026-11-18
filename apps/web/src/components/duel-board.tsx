@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import type { Action, CardInfo, ClientMessage, GameEvent, GameView, MonsterView, PlayerView, ServerMessage, SupportInfo } from "@golden-era/duel-engine";
 
+import { DuelLobby, WaitingRoom, type DuelDeck } from "./duel-lobby";
 import { factsOf, PendingPanel, POSITION_NAMES, REVEAL_MS, RevealOverlay, STAR_NAMES, SummonPanel, type Match, type Reveal } from "./duel-parts";
 
 type Phase = "lobby" | "connecting" | "waiting" | "playing" | "closed";
@@ -109,11 +110,10 @@ function fxFor(events: GameEvent[], nextId: () => number): Record<string, Fx> {
   return out;
 }
 
-export function DuelBoard({ wsUrl, imageBase, decks }: { wsUrl: string; imageBase: string; decks: { id: string; name: string }[] }) {
+export function DuelBoard({ wsUrl, imageBase, decks }: { wsUrl: string; imageBase: string; decks: DuelDeck[] }) {
   const wsRef = useRef<WebSocket | null>(null);
   const [phase, setPhase] = useState<Phase>("lobby");
   const [error, setError] = useState<string | null>(null);
-  const [code, setCode] = useState("");
   const [deckId, setDeckId] = useState(""); // vazio = baralho aleatório
   const [room, setRoom] = useState<string | null>(null);
   const [match, setMatch] = useState<Match | null>(null);
@@ -270,63 +270,22 @@ export function DuelBoard({ wsUrl, imageBase, decks }: { wsUrl: string; imageBas
 
   if (phase === "lobby" || phase === "connecting") {
     return (
-      <section className="duel-lobby">
-        {error ? <p role="alert" className="duel-error">{error}</p> : null}
-        <div className="duel-deckpick">
-          <label>
-            Baralho
-            <select value={deckId} onChange={(e) => setDeckId(e.target.value)} disabled={phase === "connecting"}>
-              <option value="">Aleatório</option>
-              {decks.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <p className="muted">
-            O duelo usa os monstros e as magias/armadilhas que o modo conhece; fusões, Extra Deck e o resto do deck ficam de
-            fora, e o que faltar para 40 cartas é completado ao acaso.
-          </p>
-        </div>
-        <button className="button" disabled={phase === "connecting"} onClick={() => connect(undefined, true)}>
-          Jogar contra o bot
-        </button>
-        <button className="button ghost" disabled={phase === "connecting"} onClick={() => connect()}>
-          Criar sala
-        </button>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (code.trim()) void connect(code.trim());
-          }}
-        >
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="Código da sala"
-            maxLength={4}
-            aria-label="Código da sala"
-          />
-          <button className="button ghost" disabled={phase === "connecting" || !code.trim()}>
-            Entrar
-          </button>
-        </form>
-      </section>
+      <DuelLobby
+        decks={decks}
+        deckId={deckId}
+        onPick={setDeckId}
+        busy={phase === "connecting"}
+        error={error}
+        onBot={() => connect(undefined, true)}
+        onCreate={() => connect()}
+        onJoin={(c) => void connect(c)}
+      />
     );
   }
 
   if (phase === "waiting") {
-    return (
-      <section className="duel-lobby">
-        <p>
-          Sala <strong className="duel-code">{room}</strong> criada. Passe o código para o seu oponente e aguarde…
-        </p>
-        <button className="button ghost" onClick={leave}>Cancelar</button>
-      </section>
-    );
+    return <WaitingRoom room={room ?? ""} deckName={decks.find((d) => d.id === deckId)?.name ?? "Aleatório"} onCancel={leave} />;
   }
-
   if (phase === "closed" || !match || !view) {
     return (
       <section className="duel-lobby">
