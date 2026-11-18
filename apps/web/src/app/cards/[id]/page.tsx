@@ -5,9 +5,11 @@ import { Suspense } from "react";
 
 import { api, describeError } from "@/lib/api";
 import { LimitBadge } from "@/components/limit-badge";
+import { AddToDeck, AddToDeckLogin } from "@/components/add-to-deck";
 import { OwnedControl } from "@/components/owned-control";
 import { TiltCard } from "@/components/tilt-card";
 import { banlistLabel } from "@/lib/banlist";
+import { authHeaders } from "@/lib/session";
 
 type Params = Promise<{ id: string }>;
 
@@ -36,6 +38,15 @@ function Fact({ label, value }: { label: string; value?: string | number | null 
       {value}
     </div>
   );
+}
+
+/** Caixa "Adicionar a um baralho": lê a sessão (cookie), então fica dentro de <Suspense>. */
+async function AddToDeckSection({ cardId }: { cardId: number }) {
+  const headers = await authHeaders();
+  const res = headers ? await api.GET("/me/decks", { params: { query: { limit: 50 } }, headers }) : null;
+  if (!res?.data) return <AddToDeckLogin cardId={cardId} />;
+  const decks = res.data.items.map((d) => ({ id: d.id, name: d.name, visibility: d.visibility }));
+  return <AddToDeck cardId={cardId} decks={decks} />;
 }
 
 async function CardDetail({ params }: { params: Params }) {
@@ -68,6 +79,9 @@ async function CardDetail({ params }: { params: Params }) {
           ) : null}
           <Suspense fallback={null}>
             <OwnedControl cardId={card.id} />
+          </Suspense>
+          <Suspense fallback={null}>
+            <AddToDeckSection cardId={card.id} />
           </Suspense>
           {card.atk != null || card.def != null ? (
             <div className="stat-plate">

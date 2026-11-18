@@ -5,7 +5,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { api, describeError } from "@/lib/api";
-import type { CardLite, DeckCards } from "@/lib/deck-rules";
+import { addCard, canAdd, copiesOf, homeZone, ZONE_LABEL, type CardLite, type DeckCards } from "@/lib/deck-rules";
 import { authHeaders, getCurrentUser } from "@/lib/session";
 import {
   ACCESS_COOKIE,
@@ -198,6 +198,46 @@ export async function saveDeck(deckId: string | null, draft: DeckDraft): Promise
   redirect(`/decks/${id}`);
 }
 
+/**
+ * Soma uma cópia da carta a um deck do usuário (no deck principal ou no Extra Deck, conforme a carta). A carta é lida
+ * da API (o cliente só diz o id), as regras do cliente dão a mensagem e a API continua sendo quem valida ao salvar.
+ */
+export async function addCardToDeck(deckId: string, cardId: number): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
+  const headers = await authHeaders();
+  if (!headers) redirect(`/login?next=${encodeURIComponent(`/cards/${cardId}`)}`);
+  if (!Number.isSafeInteger(cardId) || !/^[0-9a-f-]{36}$/i.test(deckId)) return { ok: false, error: "Pedido inválido." };
+
+  try {
+    const [deckRes, cardRes] = await Promise.all([
+      api.GET("/decks/{deckId}", { params: { path: { deckId } }, headers }),
+      api.GET("/cards/{cardId}", { params: { path: { cardId } } }),
+    ]);
+    if (deckRes.response.status === 401) redirect(`/login?next=${encodeURIComponent(`/cards/${cardId}`)}`);
+    if (!deckRes.data) return { ok: false, error: problemText(deckRes.error) };
+    if (!cardRes.data) return { ok: false, error: problemText(cardRes.error) };
+    const deck = deckRes.data;
+    const card = cardRes.data;
+
+    const zone = homeZone(card);
+    const refusal = canAdd(deck.cards, zone, card);
+    if (refusal) return { ok: false, error: refusal };
+
+    const cards = addCard(deck.cards, zone, card.id);
+    const res = await api.PUT("/decks/{deckId}", {
+      params: { path: { deckId } },
+      body: { name: deck.name, description: deck.description, visibility: deck.visibility, cards },
+      headers,
+    });
+    if (!res.data) return { ok: false, error: problemText(res.error) };
+
+    revalidatePath(`/decks/${deckId}`);
+    const copies = copiesOf(cards, card.id);
+    return { ok: true, message: `${card.name} adicionada a "${deck.name}" (${ZONE_LABEL[zone]}): agora ${copies} ${copies === 1 ? "cópia" : "cópias"}.` };
+  } catch (e) {
+    if (e && typeof e === "object" && "digest" in e) throw e; // redirect() do Next sobe como exceção
+    return { ok: false, error: "Não foi possível falar com a API." };
+  }
+}
 /** Exclui um deck do usuário e volta ao perfil. */
 export async function deleteDeck(deckId: string) {
   const headers = await authHeaders();

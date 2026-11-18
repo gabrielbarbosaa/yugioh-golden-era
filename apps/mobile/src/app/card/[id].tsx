@@ -4,6 +4,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 
+import { AddToDeck } from '@/components/add-to-deck';
 import { CARD_ASPECT } from '@/components/card-tile';
 import { LimitBadge } from '@/components/limit-badge';
 import { TiltView } from '@/components/tilt-view';
@@ -139,6 +140,7 @@ export default function CardDetailScreen() {
             </ThemedView>
           ) : null}
           <Owned cardId={card.id} />
+          <AddToDeck card={card} />
           <ThemedView style={styles.facts}>
             <Fact label="Tipo" value={card.type} />
             <Fact label="Atributo" value={card.attribute} />
