@@ -438,6 +438,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Busca jogadores pelo nome de usuário
+         * @description Procura por trecho do nome (sem diferenciar maiúsculas), em ordem alfabética.
+         */
+        get: operations["searchUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/{username}": {
         parameters: {
             query?: never;
@@ -468,6 +488,44 @@ export interface paths {
         };
         /** Decks públicos de um usuário */
         get: operations["listUserDecks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{username}/followers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                username: components["parameters"]["Username"];
+            };
+            cookie?: never;
+        };
+        /** Quem segue o usuário */
+        get: operations["listFollowers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{username}/following": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                username: components["parameters"]["Username"];
+            };
+            cookie?: never;
+        };
+        /** Quem o usuário segue */
+        get: operations["listFollowing"];
         put?: never;
         post?: never;
         delete?: never;
@@ -739,6 +797,10 @@ export interface components {
              * @description Imagem pequena da carta da foto de perfil (nula se não escolheu)
              */
             avatarUrl?: string | null;
+        };
+        UserPage: {
+            items: components["schemas"]["UserSummary"][];
+            nextCursor?: string | null;
         };
         Profile: components["schemas"]["UserSummary"] & {
             bio?: string;
@@ -1577,6 +1639,33 @@ export interface operations {
             422: components["responses"]["ValidationError"];
         };
     };
+    searchUsers: {
+        parameters: {
+            query: {
+                /** @description Trecho do nome de usuário */
+                q: string;
+                /** @description Cursor opaco retornado em `nextCursor` */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de usuários */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPage"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
     getUser: {
         parameters: {
             query?: never;
@@ -1622,6 +1711,60 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeckPage"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listFollowers: {
+        parameters: {
+            query?: {
+                /** @description Cursor opaco retornado em `nextCursor` */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                username: components["parameters"]["Username"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de usuários */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPage"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listFollowing: {
+        parameters: {
+            query?: {
+                /** @description Cursor opaco retornado em `nextCursor` */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                username: components["parameters"]["Username"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de usuários */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPage"];
                 };
             };
             404: components["responses"]["NotFound"];

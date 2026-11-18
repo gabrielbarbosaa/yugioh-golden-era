@@ -24,6 +24,9 @@ type UserStore interface {
 	Profile(ctx context.Context, id string) (store.Profile, error)
 	PublicProfile(ctx context.Context, username, viewerID string) (store.Profile, error)
 	UpdateProfile(ctx context.Context, id string, up store.ProfileUpdate) error
+	Search(ctx context.Context, q, after string, limit int) ([]store.DeckOwner, bool, error)
+	Followers(ctx context.Context, username, after string, limit int) ([]store.DeckOwner, bool, error)
+	Following(ctx context.Context, username, after string, limit int) ([]store.DeckOwner, bool, error)
 	SaveRefreshToken(ctx context.Context, userID string, hash []byte, expiresAt time.Time) error
 	ConsumeRefreshToken(ctx context.Context, hash []byte) (string, error)
 	RevokeRefreshToken(ctx context.Context, userID string, hash []byte) error
@@ -54,6 +57,9 @@ var publicOps = map[string]bool{
 	"GetBanlist":     true,
 	"ListAnimeDecks": true,
 	"GetCardFacets":  true,
+	"SearchUsers":    true,
+	"ListFollowers":  true,
+	"ListFollowing":  true,
 	"Register":       true,
 	"Login":          true,
 	"RefreshToken":   true,

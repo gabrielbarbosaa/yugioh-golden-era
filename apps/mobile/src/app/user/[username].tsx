@@ -1,5 +1,5 @@
 import type { DeckSummary, Profile } from '@golden-era/api-client';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,14 +15,20 @@ import { api } from '@/lib/api';
 import { describeError } from '@/lib/errors';
 import { useSession } from '@/lib/session';
 
-function Stat({ label, value }: { label: string; value?: number }) {
-  return (
+function Stat({ label, value, onPress }: { label: string; value?: number; onPress?: () => void }) {
+  const body = (
     <ThemedView type="backgroundElement" style={styles.stat}>
       <ThemedText type="smallBold">{value ?? 0}</ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
         {label}
       </ThemedText>
     </ThemedView>
+  );
+  if (!onPress) return body;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Ver ${label.toLowerCase()}`} style={styles.statTap}>
+      {body}
+    </Pressable>
   );
 }
 
@@ -61,8 +67,16 @@ function Header({ profile, isMe }: { profile: Profile; isMe: boolean }) {
       {profile.bio ? <ThemedText>{profile.bio}</ThemedText> : null}
       <ThemedView style={styles.stats}>
         <Stat label="Decks" value={profile.deckCount} />
-        <Stat label="Seguidores" value={follow.followers} />
-        <Stat label="Seguindo" value={profile.followingCount} />
+        <Stat
+          label="Seguidores"
+          value={follow.followers}
+          onPress={() => router.push({ pathname: '/people', params: { kind: 'followers', username: profile.username } })}
+        />
+        <Stat
+          label="Seguindo"
+          value={profile.followingCount}
+          onPress={() => router.push({ pathname: '/people', params: { kind: 'following', username: profile.username } })}
+        />
       </ThemedView>
       {isMe ? null : signedIn ? (
         <Pressable
@@ -177,6 +191,7 @@ const styles = StyleSheet.create({
   header: { gap: Spacing.three, paddingBottom: Spacing.two },
   title: { fontSize: 28, lineHeight: 34 },
   stats: { flexDirection: 'row', gap: Spacing.two },
+  statTap: { flex: 1 },
   stat: { flex: 1, alignItems: 'center', borderRadius: Spacing.three, padding: Spacing.three, gap: Spacing.half },
   follow: { borderRadius: Spacing.three, paddingVertical: Spacing.three, alignItems: 'center' },
   decksTitle: { paddingTop: Spacing.two },

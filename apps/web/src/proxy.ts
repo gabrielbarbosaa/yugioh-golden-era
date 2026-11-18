@@ -26,6 +26,7 @@ function malformedAddress(pathname: string): boolean {
   if ((m = /^\/decks\/([^/]+)\/?$/.exec(pathname))) return m[1] !== "new" && !UUID_RE.test(m[1]);
   if ((m = /^\/decks\/([^/]+)\/edit\/?$/.exec(pathname))) return !UUID_RE.test(m[1]);
   if ((m = /^\/users\/([^/]+)\/?$/.exec(pathname))) return !USERNAME_RE.test(decodeURIComponent(m[1]));
+  if ((m = /^\/users\/([^/]+)\/(?:followers|following)\/?$/.exec(pathname))) return !USERNAME_RE.test(decodeURIComponent(m[1]));
   return false;
 }
 

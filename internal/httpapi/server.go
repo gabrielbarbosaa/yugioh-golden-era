@@ -92,6 +92,9 @@ var implemented = map[string]bool{
 	"FollowUser":        true,
 	"UnfollowUser":      true,
 	"GetUser":           true,
+	"SearchUsers":       true,
+	"ListFollowers":     true,
+	"ListFollowing":     true,
 
 	"GetMyCollection":     true,
 	"ReplaceMyCollection": true,

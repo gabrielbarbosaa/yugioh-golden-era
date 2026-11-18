@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { AnimeDecks } from "@/components/anime-decks";
 import { Avatar } from "@/components/avatar";
 import { AvatarPicker } from "@/components/avatar-picker";
+import { FollowButton, FollowLogin } from "@/components/follow-button";
 import { DeckList } from "@/components/deck-list";
 import { Pager, withQuery } from "@/components/pager";
 import { api, describeError } from "@/lib/api";
@@ -35,10 +36,11 @@ async function Profile({ params, searchParams }: { params: Params; searchParams:
   // (como na aba Perfil do app); nos perfis dos outros só os públicos.
   const viewer = await getCurrentUser();
   const isMe = viewer?.username.toLowerCase() === username.toLowerCase();
-  const headers = isMe ? await authHeaders() : undefined;
+  // Com sessão, a API também diz se o visitante já segue este perfil (`followedByMe`); sem sessão o perfil é anônimo.
+  const headers = viewer ? await authHeaders() : undefined;
 
   const [profileRes, decksRes] = await Promise.all([
-    api.GET("/users/{username}", { params: { path: { username } } }),
+    api.GET("/users/{username}", { params: { path: { username } }, headers }),
     isMe
       ? api.GET("/me/decks", { params: { query: { cursor: cursor || undefined, limit: 20 } }, headers })
       : api.GET("/users/{username}/decks", {
@@ -57,6 +59,11 @@ async function Profile({ params, searchParams }: { params: Params; searchParams:
         <div>
           <h1>@{profile.username}</h1>
           {profile.bio ? <p>{profile.bio}</p> : null}
+          {isMe ? null : viewer ? (
+            <FollowButton username={profile.username} following={profile.followedByMe ?? false} />
+          ) : (
+            <FollowLogin username={profile.username} />
+          )}
         </div>
       </div>
       {isMe ? <AvatarPicker hasAvatar={profile.avatarCardId != null} /> : null}
@@ -65,14 +72,14 @@ async function Profile({ params, searchParams }: { params: Params; searchParams:
           <strong>{profile.deckCount ?? 0}</strong>
           <span className="muted">Decks</span>
         </div>
-        <div className="stat">
+        <Link href={`/users/${profile.username}/followers`} className="stat">
           <strong>{profile.followerCount ?? 0}</strong>
           <span className="muted">Seguidores</span>
-        </div>
-        <div className="stat">
+        </Link>
+        <Link href={`/users/${profile.username}/following`} className="stat">
           <strong>{profile.followingCount ?? 0}</strong>
           <span className="muted">Seguindo</span>
-        </div>
+        </Link>
       </div>
       <h2>{isMe ? "Meus decks" : "Decks públicos"}</h2>
       {isMe ? (

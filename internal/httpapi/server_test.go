@@ -170,7 +170,7 @@ func TestAllContractOperationsAreImplemented(t *testing.T) {
 		"ListDecks", "CreateDeck", "ImportDeck", "GetDeck", "UpdateDeck", "DeleteDeck", "CopyDeck", "ExportDeck",
 		"LikeDeck", "UnlikeDeck", "ListDeckComments", "CreateDeckComment", "GetMe", "UpdateMe", "ListMyDecks",
 		"GetMyCollection", "ReplaceMyCollection", "GetUser", "ListUserDecks", "FollowUser", "UnfollowUser",
-		"ListAnimeDecks", "ImportAnimeDeck",
+		"ListAnimeDecks", "ImportAnimeDeck", "SearchUsers", "ListFollowers", "ListFollowing",
 	} {
 		if !implemented[op] {
 			t.Errorf("%s nÃ£o estÃ¡ em implemented", op)

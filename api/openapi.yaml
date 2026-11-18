@@ -657,6 +657,31 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
+  /users:
+    get:
+      tags: [Profiles]
+      operationId: searchUsers
+      summary: Busca jogadores pelo nome de usuário
+      description: Procura por trecho do nome (sem diferenciar maiúsculas), em ordem alfabética.
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Trecho do nome de usuário
+          schema: { type: string, minLength: 1, maxLength: 24 }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Página de usuários
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
   /users/{username}:
     parameters:
       - $ref: '#/components/parameters/Username'
@@ -693,6 +718,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeckPage'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{username}/followers:
+    parameters:
+      - $ref: '#/components/parameters/Username'
+    get:
+      tags: [Social]
+      operationId: listFollowers
+      summary: Quem segue o usuário
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Página de usuários
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{username}/following:
+    parameters:
+      - $ref: '#/components/parameters/Username'
+    get:
+      tags: [Social]
+      operationId: listFollowing
+      summary: Quem o usuário segue
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Página de usuários
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -1082,6 +1149,15 @@ components:
           format: uri
           nullable: true
           description: Imagem pequena da carta da foto de perfil (nula se não escolheu)
+
+    UserPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/UserSummary' }
+        nextCursor: { type: string, nullable: true }
 
     Profile:
       allOf:

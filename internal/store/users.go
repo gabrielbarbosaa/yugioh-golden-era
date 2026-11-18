@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -139,6 +140,85 @@ func (s *Users) UpdateProfile(ctx context.Context, id string, up ProfileUpdate) 
 		return ErrNotFound
 	}
 	return nil
+}
+
+const userBriefSelect = `u.id::text, u.username::text, u.avatar_card_id, (SELECT ca.image_small_path FROM cards ca WHERE ca.id = u.avatar_card_id)`
+
+// listUsers roda uma consulta que já ordena por username e limita a `limit+1` linhas; devolve até `limit` e se há mais.
+func (s *Users) listUsers(ctx context.Context, limit int, sql string, args ...any) ([]DeckOwner, bool, error) {
+	rows, err := s.pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	defer rows.Close()
+	var out []DeckOwner
+	for rows.Next() {
+		var o DeckOwner
+		if err := rows.Scan(&o.ID, &o.Username, &o.AvatarCardID, &o.AvatarPath); err != nil {
+			return nil, false, err
+		}
+		out = append(out, o)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, false, err
+	}
+	more := len(out) > limit
+	if more {
+		out = out[:limit]
+	}
+	return out, more, nil
+}
+
+// likePattern escapa %, _ e \ para a busca por trecho (ESCAPE '\').
+func likePattern(q string) string {
+	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+	return "%" + r.Replace(q) + "%"
+}
+
+// Search procura usuários pelo trecho do nome (sem diferenciar maiúsculas), em ordem alfabética.
+// `after` é o último username da página anterior (vazio = primeira página).
+func (s *Users) Search(ctx context.Context, q, after string, limit int) ([]DeckOwner, bool, error) {
+	return s.listUsers(ctx, limit, `
+		SELECT `+userBriefSelect+`
+		FROM users u
+		WHERE u.username::text ILIKE $1 ESCAPE '\' AND ($2 = '' OR u.username > $2::citext)
+		ORDER BY u.username LIMIT $3`, likePattern(q), after, limit+1)
+}
+
+// userExists devolve ErrNotFound se o username não existir.
+func (s *Users) userExists(ctx context.Context, username string) error {
+	var one int
+	err := s.pool.QueryRow(ctx, `SELECT 1 FROM users WHERE username = $1`, username).Scan(&one)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrNotFound
+	}
+	return err
+}
+
+// Followers lista quem segue o usuário (ErrNotFound se ele não existir).
+func (s *Users) Followers(ctx context.Context, username, after string, limit int) ([]DeckOwner, bool, error) {
+	if err := s.userExists(ctx, username); err != nil {
+		return nil, false, err
+	}
+	return s.listUsers(ctx, limit, `
+		SELECT `+userBriefSelect+`
+		FROM follows f
+		JOIN users u ON u.id = f.follower_id
+		WHERE f.followee_id = (SELECT id FROM users WHERE username = $1) AND ($2 = '' OR u.username > $2::citext)
+		ORDER BY u.username LIMIT $3`, username, after, limit+1)
+}
+
+// Following lista quem o usuário segue (ErrNotFound se ele não existir).
+func (s *Users) Following(ctx context.Context, username, after string, limit int) ([]DeckOwner, bool, error) {
+	if err := s.userExists(ctx, username); err != nil {
+		return nil, false, err
+	}
+	return s.listUsers(ctx, limit, `
+		SELECT `+userBriefSelect+`
+		FROM follows f
+		JOIN users u ON u.id = f.followee_id
+		WHERE f.follower_id = (SELECT id FROM users WHERE username = $1) AND ($2 = '' OR u.username > $2::citext)
+		ORDER BY u.username LIMIT $3`, username, after, limit+1)
 }
 
 // SaveRefreshToken guarda o hash de um refresh token recém-emitido.

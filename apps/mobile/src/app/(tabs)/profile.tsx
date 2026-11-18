@@ -61,9 +61,20 @@ function MyProfile() {
       {profile.bio ? <ThemedText>{profile.bio}</ThemedText> : null}
       <ThemedView type="backgroundElement" style={styles.stats}>
         <Stat label="Decks" value={profile.deckCount} />
-        <Stat label="Seguidores" value={profile.followerCount} />
-        <Stat label="Seguindo" value={profile.followingCount} />
+        <Stat
+          label="Seguidores"
+          value={profile.followerCount}
+          onPress={() => router.push({ pathname: '/people', params: { kind: 'followers', username: profile.username } })}
+        />
+        <Stat
+          label="Seguindo"
+          value={profile.followingCount}
+          onPress={() => router.push({ pathname: '/people', params: { kind: 'following', username: profile.username } })}
+        />
       </ThemedView>
+      <Pressable onPress={() => router.push({ pathname: '/people', params: { kind: 'search' } })} accessibilityRole="button">
+        <ThemedText type="linkPrimary">Buscar jogadores</ThemedText>
+      </Pressable>
       <MyDecks />
       <Pressable onPress={signOut} accessibilityRole="button" style={({ pressed }) => pressed && styles.pressed}>
         <ThemedText type="linkPrimary">Sair</ThemedText>
@@ -120,14 +131,20 @@ function MyDecks() {
   );
 }
 
-function Stat({ label, value }: { label: string; value?: number }) {
-  return (
+function Stat({ label, value, onPress }: { label: string; value?: number; onPress?: () => void }) {
+  const body = (
     <ThemedView type="backgroundElement" style={styles.stat}>
       <ThemedText type="smallBold">{value ?? 0}</ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
         {label}
       </ThemedText>
     </ThemedView>
+  );
+  if (!onPress) return body;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Ver ${label.toLowerCase()}`} style={styles.statTap}>
+      {body}
+    </Pressable>
   );
 }
 
@@ -160,6 +177,7 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   headText: { flex: 1, gap: Spacing.one },
   stats: { flexDirection: 'row', gap: Spacing.two },
+  statTap: { flex: 1 },
   stat: { flex: 1, alignItems: 'center', borderRadius: Spacing.three, padding: Spacing.three, gap: Spacing.half },
   decks: { gap: Spacing.two },
   decksActions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 1, gap: Spacing.three },

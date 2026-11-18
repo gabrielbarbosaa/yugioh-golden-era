@@ -238,6 +238,23 @@ export async function addCardToDeck(deckId: string, cardId: number): Promise<{ o
     return { ok: false, error: "Não foi possível falar com a API." };
   }
 }
+/** Segue (`follow` verdadeiro) ou deixa de seguir um usuário; as duas operações são idempotentes na API. */
+export async function setFollow(username: string, follow: boolean): Promise<{ ok: true } | { ok: false; error: string }> {
+  const headers = await authHeaders();
+  if (!headers) redirect(`/login?next=${encodeURIComponent(`/users/${username}`)}`);
+  try {
+    const params = { params: { path: { username } }, headers };
+    const res = follow ? await api.PUT("/users/{username}/follow", params) : await api.DELETE("/users/{username}/follow", params);
+    if (res.response.status === 401) redirect(`/login?next=${encodeURIComponent(`/users/${username}`)}`);
+    if (!res.response.ok) return { ok: false, error: problemText(res.error) };
+    revalidatePath(`/users/${username}`);
+    return { ok: true };
+  } catch (e) {
+    if (e && typeof e === "object" && "digest" in e) throw e; // redirect() do Next sobe como exceção
+    return { ok: false, error: "Não foi possível falar com a API." };
+  }
+}
+
 /** Define a carta da foto de perfil (`0` remove a foto). A API valida que a carta existe. */
 export async function setAvatarCard(cardId: number): Promise<{ ok: true } | { ok: false; error: string }> {
   const headers = await authHeaders();
