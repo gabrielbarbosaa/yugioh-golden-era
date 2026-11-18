@@ -3,20 +3,7 @@
 import { useRef, useState } from "react";
 import type { Action, CardInfo, ClientMessage, GameEvent, GameView, MonsterView, PlayerView, ServerMessage, SupportInfo } from "@golden-era/duel-engine";
 
-import { factsOf, PendingPanel, POSITION_NAMES, RevealOverlay, type Match, type Reveal } from "./duel-parts";
-
-const STAR_NAMES: Record<string, string> = {
-  sun: "Sol",
-  moon: "Lua",
-  venus: "Vênus",
-  mercury: "Mercúrio",
-  mars: "Marte",
-  jupiter: "Júpiter",
-  saturn: "Saturno",
-  uranus: "Urano",
-  pluto: "Plutão",
-  neptune: "Netuno",
-};
+import { factsOf, PendingPanel, POSITION_NAMES, REVEAL_MS, RevealOverlay, STAR_NAMES, SummonPanel, type Match, type Reveal } from "./duel-parts";
 
 type Phase = "lobby" | "connecting" | "waiting" | "playing" | "closed";
 
@@ -79,7 +66,12 @@ function revealsFor(events: GameEvent[], m: Match, nextKey: () => number): Revea
   for (const e of events) {
     let title: string;
     let kind: Reveal["kind"];
-    if (e.type === "spell") {
+    if (e.type === "play") {
+      // Só fusões à vista (virada para baixo, o oponente não recebe as cartas).
+      if (e.materials.length < 2 || e.cardId < 0) continue;
+      out.push({ key: nextKey(), id: e.cardId, title: `${who(e.player)} fundiu`, name: factsOf(m, e.cardId).name, text: "", kind: "fusion", materials: e.materials });
+      continue;
+    } else if (e.type === "spell") {
       title = `${who(e.player)} usou a magia`;
       kind = "spell";
     } else if (e.type === "trap") {
@@ -157,7 +149,7 @@ export function DuelBoard({ wsUrl, imageBase, decks }: { wsUrl: string; imageBas
         showing.current = false;
         pump();
       },
-      item.kind === "flip" ? 1400 : 2600,
+      REVEAL_MS[item.kind],
     );
   }
 
@@ -226,7 +218,11 @@ export function DuelBoard({ wsUrl, imageBase, decks }: { wsUrl: string; imageBas
             if (lines.length) setLog((old) => [...old, ...lines].slice(-80));
             queue.current.push(...revealsFor(msg.events, m, nextId));
             pump();
-            addFx(fxFor(msg.events, nextId));
+            // Numa fusão o monstro novo só "chega" depois da animação (ela cobre a mesa).
+            const fused = msg.events.some((e) => e.type === "play" && e.materials.length > 1 && e.cardId >= 0);
+            const fxs = fxFor(msg.events, nextId);
+            if (fused) setTimeout(() => addFx(fxs), REVEAL_MS.fusion - 300);
+            else addFx(fxs);
           }
           break;
         }
@@ -368,13 +364,6 @@ export function DuelBoard({ wsUrl, imageBase, decks }: { wsUrl: string; imageBas
   const needsSacrifice = exactAll.some((a) => a.sacrifice !== undefined);
   const exact = needsSacrifice ? (sacZone === null ? [] : exactAll.filter((a) => a.sacrifice === sacZone)) : exactAll;
 
-  const playLabel = (a: Extract<Action, { type: "play" }>) => {
-    const first = hand[a.hand[0]!];
-    const star = a.hand.length === 1 && first !== undefined ? match.cards[first]?.stars[a.star] : undefined;
-    const result = a.result ? ` → ${match.cards[a.result]?.name ?? a.result}` : "";
-    return `${POSITION_NAMES[a.position]} · ${star ? STAR_NAMES[star] : `estrela ${a.star + 1}`}${result}`;
-  };
-
   const zoneActions = zone === null ? [] : legal.filter((a) => (a.type === "attack" || a.type === "changePosition") && a.zone === zone);
 
   // ---- peças da mesa
@@ -396,7 +385,8 @@ export function DuelBoard({ wsUrl, imageBase, decks }: { wsUrl: string; imageBas
         {...inspectProps(m?.cardId ?? null)}
       >
         {m ? (
-          m.cardId === null ? (
+          // Virado para baixo mostra o verso (de lado) também para o dono; o inspetor ainda diz qual carta é.
+          m.cardId === null || m.position === "facedown" || m.position === "setattack" ? (
             <span className="duel-back" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
@@ -564,12 +554,6 @@ export function DuelBoard({ wsUrl, imageBase, decks }: { wsUrl: string; imageBas
 
           {myTurn ? (
             <div className="duel-actions">
-              {exact.map((a, i) => (
-                <button key={i} className="button" onClick={() => act(a)}>
-                  {a.hand.length > 1 ? "Fundir" : "Jogar"} · {playLabel(a)}
-                  {a.sacrifice !== undefined ? ` · sacrificando ${nameOf(me.field[a.sacrifice]?.cardId ?? null)}` : ""}
-                </button>
-              ))}
               {supportPicked ? (
                 <button className="button" onClick={() => act(supportPicked)}>
                   {supportPicked.type === "spell" ? "Usar magia" : "Pôr a armadilha virada"} · {nameOf(hand[picked[0]!]!)}
@@ -580,6 +564,21 @@ export function DuelBoard({ wsUrl, imageBase, decks }: { wsUrl: string; imageBas
               ) : null}
               <button className="button ghost" onClick={() => act({ type: "endTurn" })}>Encerrar turno</button>
             </div>
+          ) : null}
+          {myTurn && exact.length > 0 ? (
+            <SummonPanel
+              key={`${picked.join(",")}-${sacZone}`}
+              plays={exact}
+              hand={hand}
+              match={match}
+              imageBase={imageBase}
+              sacrificeName={sacZone !== null ? nameOf(me.field[sacZone]?.cardId ?? null) : null}
+              onAct={act}
+              onCancel={() => {
+                setPicked([]);
+                setSacZone(null);
+              }}
+            />
           ) : null}
           {myTurn && needsSacrifice && sacZone === null ? (
             <p className="muted duel-hint">Campo cheio: clique em um dos seus monstros para sacrificá-lo e dar lugar à carta.</p>

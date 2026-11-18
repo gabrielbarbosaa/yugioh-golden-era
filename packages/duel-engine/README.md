@@ -20,7 +20,7 @@ Este pacote é só o "cérebro" (regras + simulação). Não tem rede, tela nem 
 | Atacar | só monstros em ataque, uma vez por turno, e não no turno em que foram jogados. Com o campo do oponente vazio o ataque é direto (ATK inteiro) |
 | Ataque × ataque | o maior ATK destrói o menor e a diferença vira dano; empate destrói os dois |
 | Ataque × defesa | ATK maior destrói sem dano; ATK menor machuca **quem atacou** pela diferença; igual não faz nada. Monstro virado para baixo é revelado ao ser atacado |
-| Posição | uma troca por turno, nunca no turno em que o monstro foi jogado nem depois de atacar |
+| Ataque virado | posição **da casa**: o monstro é jogado virado para baixo (o oponente não vê qual é) mas **pode atacar** a partir do turno seguinte. Ao atacar é revelado (sem efeito de virar); se for atacado, é revelado e luta como ataque (ATK contra ATK). "Virada" comum (`facedown`) continua sendo defesa |, nunca no turno em que o monstro foi jogado nem depois de atacar |
 | Estrelas | 10 estrelas em duas rodas (A: sol > lua > vênus > mercúrio > sol; B: marte > júpiter > saturno > urano > plutão > netuno > marte). Quem tem a vantagem ganha +500 de ATK/DEF e o outro perde 500, **só na batalha** |
 | Magia | **uma por turno**, da mão, além da jogada de monstro. Resolve na hora e vai ao cemitério |
 | Armadilha | vai da mão para uma de 3 zonas, **virada para baixo** (o oponente só vê que existe uma carta). Responde a ataques |

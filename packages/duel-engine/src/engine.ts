@@ -29,7 +29,7 @@ export const otherPlayer = (p: PlayerIndex): PlayerIndex => (p === 0 ? 1 : 0);
 /** Quem pode agir agora: o jogador da vez, ou quem precisa responder/escolher quando há algo pendente. */
 export const actorOf = (state: GameState): PlayerIndex => (state.pending ? state.pending.player : state.current);
 
-const POSITIONS: readonly Position[] = ["attack", "defense", "facedown"];
+const POSITIONS: readonly Position[] = ["attack", "defense", "facedown", "setattack"];
 
 function card(rules: Rules, id: number): Card {
   const c = rules.cards[id];
@@ -85,8 +85,8 @@ export function resolveBattle(rules: Rules, attacker: MonsterOnField, target: Mo
   const a = card(rules, attacker.cardId);
   const t = card(rules, target.cardId);
   const bonus = starAdvantage(attacker.star, target.star) * rules.starBonus;
-  const flip = target.position === "facedown";
-  const defending = target.position !== "attack"; // virado para baixo é defesa
+  const flip = target.position === "facedown" || target.position === "setattack";
+  const defending = target.position === "defense" || target.position === "facedown"; // "facedown" é defesa virada; "setattack" luta como ataque (depois de revelado)
   const attackerPower = Math.max(0, a.atk + bonus);
   const targetPower = Math.max(0, (defending ? t.def : t.atk) - bonus);
   const diff = attackerPower - targetPower;
@@ -272,7 +272,7 @@ function attack(rules: Rules, state: GameState, action: AttackAction, events: Ga
 
   const mon = me.field[action.zone];
   if (!mon) throw new IllegalActionError("não há monstro nessa zona");
-  if (mon.position !== "attack") throw new IllegalActionError("só monstros em posição de ataque podem atacar");
+  if (mon.position !== "attack" && mon.position !== "setattack") throw new IllegalActionError("só monstros em posição de ataque podem atacar");
   if (mon.summonedOn >= state.turn) throw new IllegalActionError("o monstro foi jogado neste turno e ainda não pode atacar");
   if (mon.attackedOn === state.turn) throw new IllegalActionError("este monstro já atacou neste turno");
 
@@ -282,6 +282,11 @@ function attack(rules: Rules, state: GameState, action: AttackAction, events: Ga
     throw new IllegalActionError("não há monstro no alvo");
   }
 
+  // Ataque virado: ao atacar o monstro é revelado (sem efeito de virar; ele não foi virado por um ataque).
+  if (mon.position === "setattack") {
+    mon.position = "attack";
+    events.push({ type: "flip", player: attackerIdx, zone: action.zone, cardId: mon.cardId });
+  }
   events.push({ type: "attack", player: attackerIdx, zone: action.zone, target: action.target });
   mon.attackedOn = state.turn;
 
@@ -312,7 +317,7 @@ function resolveAttack(rules: Rules, state: GameState, attackerIdx: PlayerIndex,
 
   const outcome = resolveBattle(rules, mon, victim);
   if (outcome.flip) {
-    victim.position = "defense";
+    victim.position = victim.position === "setattack" ? "attack" : "defense";
     events.push({ type: "flip", player: foeIdx, zone: target, cardId: victim.cardId });
   }
   if (outcome.destroyTarget) destroyAt(state, foeIdx, target, events);
@@ -429,7 +434,7 @@ function changePosition(rules: Rules, state: GameState, action: ChangePositionAc
   if (mon.attackedOn === state.turn) throw new IllegalActionError("o monstro já atacou neste turno");
   if (mon.movedOn === state.turn) throw new IllegalActionError("o monstro já mudou de posição neste turno");
 
-  const wasFacedown = mon.position === "facedown";
+  const wasFacedown = mon.position === "facedown" || mon.position === "setattack";
   mon.position = action.position;
   mon.movedOn = state.turn;
   if (wasFacedown) events.push({ type: "flip", player: state.current, zone: action.zone, cardId: mon.cardId });
@@ -479,7 +484,7 @@ function rebornOptions(rules: Rules, state: GameState): Choice[] {
 function fissureTarget(rules: Rules, foe: PlayerState): number | null {
   let best: number | null = null;
   foe.field.forEach((m, zone) => {
-    if (!m || m.position === "facedown") return;
+    if (!m || m.position === "facedown" || m.position === "setattack") return;
     if (best === null || card(rules, m.cardId).atk < card(rules, foe.field[best]!.cardId).atk) best = zone;
   });
   return best;
@@ -653,7 +658,7 @@ export function legalActions(rules: Rules, state: GameState): Action[] {
   const foeZones = foe.field.flatMap((m, z) => (m ? [z] : []));
   me.field.forEach((m, zone) => {
     if (!m) return;
-    if (m.position === "attack" && m.summonedOn < state.turn && m.attackedOn !== state.turn) {
+    if ((m.position === "attack" || m.position === "setattack") && m.summonedOn < state.turn && m.attackedOn !== state.turn) {
       if (foeZones.length === 0) actions.push({ type: "attack", zone, target: "direct" });
       else for (const target of foeZones) actions.push({ type: "attack", zone, target });
     }

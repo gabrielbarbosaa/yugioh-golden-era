@@ -14,7 +14,7 @@ export const STARS = [
 ] as const;
 export type Star = (typeof STARS)[number];
 
-export type Position = "attack" | "defense" | "facedown";
+export type Position = "attack" | "defense" | "facedown" | "setattack";
 export type PlayerIndex = 0 | 1;
 
 /** Uma carta do "modo FM": só os números que o combate usa, mais estrelas e custo derivados. */

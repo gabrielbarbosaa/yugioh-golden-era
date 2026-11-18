@@ -1081,7 +1081,9 @@ main.container {
 .duel-zone.empty { cursor: default; }
 .duel-zone img, .duel-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .duel-zone:not(.empty) { border-style: solid; }
-.duel-zone.pos-defense img, .duel-zone.pos-facedown .duel-back { transform: rotate(90deg) scale(0.72); }
+/* Em defesa a carta fica deitada: mesma proporção, girada 90° e centrada (largura visível = largura da zona). */
+.duel-zone.pos-defense > img, .duel-zone.pos-facedown > .duel-back { position: absolute; top: 50%; left: 50%; width: 68.6%; height: auto; aspect-ratio: 118 / 172; transform: translate(-50%, -50%) rotate(90deg); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); }
+.duel-zone.pos-facedown, .duel-zone.pos-setattack { border-style: solid; border-color: var(--gold-dark); }
 .duel-zone.selected, .duel-card.selected { outline: 2px solid var(--gold); outline-offset: 2px; box-shadow: 0 0 16px rgba(230, 180, 34, 0.7); }
 .duel-zone:not([disabled]):not(.empty):hover { transform: translateY(-3px); }
 .duel-card { width: 104px; }
@@ -1155,4 +1157,66 @@ main.container {
   .duel-card { width: 70px; }
   .duel-bar { grid-template-columns: 1fr; gap: 4px; }
   .duel-mat { padding: 8px; }
+}
+/* ---- Invocação: painel de posição/estrela */
+.duel-summon { display: grid; gap: 12px; padding: 14px 16px; border: 1px solid var(--gold); border-radius: 12px; background: rgba(15, 13, 38, 0.92); box-shadow: 0 0 22px rgba(230, 180, 34, 0.25); }
+.duel-summon-head { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; justify-content: center; font-family: var(--font-display); color: var(--gold-light); }
+.duel-summon-head .muted { font-family: inherit; font-size: 0.85rem; }
+.duel-summon-block { display: grid; gap: 8px; justify-items: center; }
+.duel-summon-label { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.duel-summon-options { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.duel-summon-opt { display: grid; gap: 6px; justify-items: center; width: 168px; padding: 10px 8px 12px; text-align: center; color: var(--text); background: rgba(10, 9, 25, 0.7); border: 1px solid var(--border-strong); border-radius: 10px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s; }
+.duel-summon-opt .muted { font-size: 0.72rem; line-height: 1.25; }
+.duel-summon-opt:hover, .duel-summon-opt:focus-visible { transform: translateY(-3px); border-color: var(--gold); }
+.duel-summon-opt.on { border-color: var(--gold); box-shadow: 0 0 18px rgba(230, 180, 34, 0.65); background: rgba(48, 38, 110, 0.55); }
+.duel-pos-art { display: grid; place-items: center; width: 118px; height: 118px; }
+.duel-pos-art > img, .duel-pos-art > .duel-back { grid-area: 1 / 1; width: 70px; height: 102px; object-fit: cover; border-radius: 5px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6); transition: transform 0.25s; }
+.duel-pos-art.pos-defense > img, .duel-pos-art.pos-facedown > .duel-back { transform: rotate(90deg); }
+.duel-summon-opt.on .duel-pos-art.pos-defense > img, .duel-summon-opt.on .duel-pos-art.pos-facedown > .duel-back { transform: rotate(90deg) scale(1.06); }
+.duel-summon-stars { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.duel-star { padding: 6px 14px; color: var(--text); background: rgba(10, 9, 25, 0.7); border: 1px solid var(--border-strong); border-radius: 999px; cursor: pointer; }
+.duel-star:hover, .duel-star:focus-visible { border-color: var(--gold); }
+.duel-star.on { color: #1a1305; background: linear-gradient(180deg, var(--gold-light), var(--gold)); border-color: var(--gold); font-weight: 700; }
+.duel-choice.on { border-color: var(--gold); box-shadow: 0 0 18px rgba(230, 180, 34, 0.7); }
+
+/* ---- Animação de fusão (estilo PS1): cartas giram no redemoinho, clarão e o monstro surge */
+.duel-fusion { position: fixed; inset: 0; z-index: 60; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; overflow: hidden; pointer-events: none; background: radial-gradient(circle at center, #0b0724 0%, #02010a 75%); animation: fusion-bg 3.8s linear forwards; }
+.duel-fusion > * { grid-area: 1 / 1; justify-self: center; align-self: center; }
+.duel-fusion-vortex { width: 120vmax; height: 120vmax; border-radius: 50%; background: conic-gradient(from 0deg, #02010a, #3a1d9a, #02010a, #8a4cff, #02010a, #e6b422, #02010a, #3a1d9a, #02010a); filter: blur(10px); opacity: 0; mask-image: radial-gradient(circle, transparent 0 6%, #000 22%, transparent 62%); animation: fusion-vortex 3.8s ease-in forwards; }
+.duel-fusion-mats { position: relative; width: 0; height: 0; }
+.duel-fusion-mat { position: absolute; left: -75px; top: -109px; width: 150px; max-width: none; height: auto; border-radius: 8px; box-shadow: 0 0 24px rgba(160, 120, 255, 0.8); animation: fusion-mat 3.8s ease-in-out forwards; animation-delay: var(--d); transform: translateX(var(--dx)); }
+.duel-fusion-flash { width: 160vmax; height: 160vmax; border-radius: 50%; background: radial-gradient(circle, #fff 0 25%, rgba(255, 255, 255, 0.6) 45%, transparent 70%); opacity: 0; animation: fusion-flash 3.8s linear forwards; }
+.duel-fusion-rays { width: 130vmax; height: 130vmax; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255, 224, 140, 0.55) 0 4deg, transparent 4deg 14deg); mask-image: radial-gradient(circle, #000 0 8%, transparent 45%); opacity: 0; animation: fusion-rays 3.8s linear forwards; }
+.duel-fusion-result { display: grid; gap: 8px; justify-items: center; max-width: 360px; text-align: center; opacity: 0; animation: fusion-result 3.8s ease-out forwards; }
+.duel-fusion-result img { border-radius: 10px; height: auto; box-shadow: 0 0 40px 10px rgba(255, 224, 140, 0.8); }
+.duel-fusion-result h3 { margin: 0; font-family: var(--font-display); font-size: 1.4rem; color: var(--gold-light); text-shadow: 0 0 12px rgba(230, 180, 34, 0.9); }
+.duel-fusion-result p { margin: 0; font-size: 0.85rem; color: var(--text); }
+.duel-fusion-title { align-self: start; margin: 6vh 0 0; font-family: var(--font-display); font-size: 1.5rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-light); text-shadow: 0 0 14px rgba(160, 120, 255, 0.95); opacity: 0; animation: fusion-title 3.8s ease-out forwards; }
+@keyframes fusion-bg { 0% { opacity: 0; } 6% { opacity: 1; } 93% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fusion-title { 0% { opacity: 0; transform: translateY(-12px); } 10%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes fusion-mat {
+  0% { opacity: 0; transform: translateX(var(--dx)) translateY(30px) scale(0.85); }
+  12% { opacity: 1; transform: translateX(var(--dx)) scale(1); }
+  30% { transform: translateX(var(--dx)) translateY(-8px) scale(1); }
+  46% { transform: translateX(calc(var(--dx) * 0.45)) rotate(360deg) scale(0.9); opacity: 1; }
+  58% { transform: translateX(0) rotate(900deg) scale(0.25); opacity: 1; filter: brightness(2.4); }
+  62%, 100% { transform: translateX(0) rotate(1080deg) scale(0); opacity: 0; }
+}
+@keyframes fusion-vortex {
+  0%, 18% { opacity: 0; transform: rotate(0) scale(0.15); }
+  35% { opacity: 0.95; transform: rotate(220deg) scale(0.7); }
+  58% { opacity: 1; transform: rotate(700deg) scale(1.1); }
+  72%, 100% { opacity: 0; transform: rotate(1000deg) scale(1.5); }
+}
+@keyframes fusion-flash { 0%, 50% { opacity: 0; transform: scale(0.1); } 58% { opacity: 1; transform: scale(0.6); } 72% { opacity: 0.9; transform: scale(1); } 86%, 100% { opacity: 0; transform: scale(1.1); } }
+@keyframes fusion-rays { 0%, 58% { opacity: 0; transform: rotate(0) scale(0.4); } 70% { opacity: 1; } 92% { opacity: 0.9; transform: rotate(60deg) scale(1); } 100% { opacity: 0; transform: rotate(70deg) scale(1.05); } }
+@keyframes fusion-result {
+  0%, 56% { opacity: 0; transform: scale(0.1) rotate(-200deg); filter: brightness(4); }
+  72% { opacity: 1; transform: scale(1.12) rotate(0); filter: brightness(1.6); }
+  80% { transform: scale(1); filter: brightness(1); }
+  92% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.04); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .duel-fusion-vortex, .duel-fusion-rays, .duel-fusion-mat { animation: none; opacity: 0; }
 }

@@ -60,7 +60,7 @@ export function viewFor(state: GameState, viewer: PlayerIndex): GameView {
       hand: mine ? [...p.hand] : null,
       field: p.field.map((m) => {
         if (!m) return null;
-        const hidden = !mine && m.position === "facedown";
+        const hidden = !mine && (m.position === "facedown" || m.position === "setattack");
         return {
           cardId: hidden ? null : m.cardId,
           position: m.position,
@@ -139,7 +139,7 @@ export function eventsFor(events: readonly GameEvent[], viewer: PlayerIndex): Ga
     if ("player" in e && e.player !== viewer) {
       if (e.type === "draw") return { ...e, cardId: HIDDEN_CARD };
       if (e.type === "set") return { ...e, cardId: HIDDEN_CARD };
-      if (e.type === "play" && e.position === "facedown") return { ...e, cardId: HIDDEN_CARD, star: null, materials: [] };
+      if (e.type === "play" && (e.position === "facedown" || e.position === "setattack")) return { ...e, cardId: HIDDEN_CARD, star: null, materials: [] };
     }
     return e;
   });
